@@ -1,0 +1,25 @@
+<div class="si-container col-xs-12" xdata-bind="fadeVisible: active">
+    <!-- ko foreach: items -->
+        <!-- ko template: 'shop-grid-item' --><!-- /ko -->
+    <!-- /ko -->
+    <div class="clearfix"></div>
+</div>
+
+<script type="text/html" id="shop-grid-item">
+
+    <!--<div class="si-item col-xs-12 col-sm-6 col-md-3 col-lg-3">-->
+    <div class="si-item col-xs-12 col-sm-6 col-md-2 col-lg-2">
+        <div class="si-internal">
+            <div class="si-image">
+                <img data-bind="attr: {src: photo}" />
+            </div>
+            <div class="si-info">
+                <div class="name" data-bind="text: partcode"></div>
+                <div class="desc" data-bind="text: description"></div>
+                <button class="btn-primary btn-xs buymore" data-bind="click: addToBasket, visible: $parent.isRetailView()">Buy</button>
+                <button class="btn-primary btn-xs buymore" data-bind="click: addToBasket, visible: !$parent.isRetailView()" >Buy @ <span class="price" data-bind="html: formattedPrice()"></span></button>
+            </div>
+        </div>
+    </div>
+</script>
+

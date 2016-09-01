@@ -1,0 +1,104 @@
+<?php
+
+
+namespace common\models;
+
+
+use Yii;
+use sammaye\audittrail\LoggableBehavior;
+
+use common\models\Account;
+
+/**
+ * This is the model class for table "stockroom".
+ *
+ * @property integer $id
+ * @property integer $account_id
+ * @property string $name
+ *
+ * @property StockItem[] $stockItems
+<<<<<<< HEAD
+ * @property Account $account
+=======
+>>>>>>> origin/Filefeeds_hk
+ */
+class Stockroom extends \yii\db\ActiveRecord
+{
+    /**
+     * @inheritdoc
+     */
+    public static function tableName()
+    {
+        return 'stockroom';
+    }
+
+
+    /**
+     * @inheritdoc
+     */
+ /*   public function behaviors()
+    {
+        return [
+            //TimestampBehavior::className(),
+
+            'LoggableBehavior'=> [
+                   'class' => LoggableBehavior::className(),
+               ]
+       ];
+      
+    }*/
+
+    /**
+     * @inheritdoc
+     */
+    public function rules()
+    {
+        return [
+            [['account_id'], 'required'],
+            [['account_id'], 'integer'],
+            [['name'], 'string', 'max' => 128]
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function attributeLabels()
+    {
+        return [
+            'id' => 'ID',
+            'account_id' => 'Account ID',
+            'name' => 'Name',
+        ];
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getStockItems()
+    {
+        return $this->hasMany(StockItem::className(), ['stockroom_id' => 'id']);
+    }
+
+<<<<<<< HEAD
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getAccount()
+    {
+        return $this->hasOne(Account::className(), ['id' => 'account_id']);
+    }
+
+    public function getStockItemsCount()
+    {
+        return StockItem::find()->where(['stockroom_id' => $this->id])->count();
+=======
+    
+    
+    public function createNewStockRoom($account_id, $label='main stock room'){
+        $this->name = $label;
+        $this->account_id = $account_id;
+        $this->save();
+>>>>>>> origin/Filefeeds_hk
+    }
+}

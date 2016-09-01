@@ -1,0 +1,30 @@
+$headerColour : #F51E1E ;
+
+
+@mixin shadedBox($shade:'white', $radius: 5px, $marginBottom: 10px) {
+    -webkit-border-radius: $radius;
+    -moz-border-radius: $radius;
+    -ms-border-radius: $radius;
+    border-radius: $radius;
+    margin-bottom: $marginBottom ;
+    background-color: unquote($shade) ;
+
+}
+
+
+@mixin inputIndicators() {
+    float: right;
+    width: 18px;
+    height: 18px;
+    font-size: 200%;
+
+    &.ok:before {
+        content: "\2713";
+        color: darkgreen;
+    }
+    &.bad:before {
+        content: "\2717";
+        color: crimson;
+    }
+
+}

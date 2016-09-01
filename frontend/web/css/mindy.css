@@ -1,0 +1,39 @@
+.myfixed {
+  position: absolute;
+  overflow: visible;
+  left: 0;
+  right: 0;
+  width: 150mm;
+  /* you must specify a width */
+  margin-top: auto;
+  margin-bottom: auto;
+  margin-left: auto;
+  margin-right: auto;
+  border: 1px solid #000088; }
+
+@page {
+  margin: 0 0;
+  padding: 0 0;
+  resetpagenum: 1; }
+.page {
+  background-size: 210mm 297mm;
+  background-size: contain;
+  background-repeat: no-repeat;
+  width: 210mm;
+  height: 297mm; }
+  .page img {
+    width: 210mm;
+    height: 297mm; }
+  .page .product-key {
+    position: absolute;
+    top: 400px; }
+
+/**
+* Need to keep product-key at the document top level (ie, a first child of body)
+* because mPDF can only process absolute positioning inside the body
+*/
+.product-key {
+  position: absolute;
+  top: 400px; }
+
+/*# sourceMappingURL=mindy.css.map */

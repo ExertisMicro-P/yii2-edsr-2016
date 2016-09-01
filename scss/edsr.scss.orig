@@ -1,0 +1,51 @@
+@import "general";
+@import "stockroom";
+
+.glyphicon {
+    color: #F51E1E ;
+}
+
+#exposeMask {
+    background: rgba(245, 180, 198, 0.18);
+}
+
+
+.exposedSelected {
+    background-color: rgba(199, 248, 255, 0.35);
+<<<<<<< HEAD
+        margin-left: 2px
+=======
+    .expquant {
+        margin-left: 2px;
+        text-align: center ;
+    }
+}
+
+
+#keyoverlay {
+    display: none;
+    background-color:Silver;
+    text-align:center;
+    position:absolute;
+    z-index:10000;
+    opacity:0.8 ;
+
+    h4 {
+        color: #F51E1E ;
+        text-align: center ;
+    }
+
+}
+
+#doreg {
+    .loader {
+        position:relative;
+        display: none ;
+    }
+}
+#rdone {
+    span {
+        color: #F51E1E ;
+>>>>>>> origin/stockroom
+    }
+}

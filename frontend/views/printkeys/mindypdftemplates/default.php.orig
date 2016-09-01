@@ -1,0 +1,114 @@
+<?php
+
+/**
+ * CREATE A TEMPORARY IMAGE FILE
+ * =============================
+ * This has grown a lt and really should be elsewhere, perhaps the model.
+ * The image data is stored in the database record as a file name for the
+ * backend, where it is initially loaded, but it also holds the actual image
+ * data for use at the front end.
+ */
+
+    // -----------------------------------------------------------------------
+    // Creating the image using the raw data is intensive and needs a lot of ram
+    // -----------------------------------------------------------------------
+    ini_set("memory_limit","256M");
+
+    // -----------------------------------------------------------------------
+    // Find the ttf font to use for the text output. The same font should ideally
+    // be used in the editor at the back end
+    // -----------------------------------------------------------------------
+    if (!defined('TTF_DIR')) {
+        if (!array_key_exists('fontLocation', Yii::$app->params)) {
+            die('You must define params[\'fontLocation\'') ;
+
+        } else {
+            DEFINE("TTF_DIR", Yii::$app->params['fontLocation']);
+        }
+
+        if (!array_key_exists('fontFile', Yii::$app->params)) {
+            die('You must define params[\'fontFile\'') ;
+
+        } else {
+            DEFINE("TTF_FONTFILE", Yii::$app->params['fontFile']);
+        }
+    }
+
+    $fontFile = TTF_DIR . TTF_FONTFILE ;
+<<<<<<< HEAD
+    $fontSize = 55 ;
+=======
+    $fontSize = 75 ;
+>>>>>>> a348ad511d826490127d640484f6ef8664f92772
+    $angle = 0 ;
+    //$text = 'YF3CN-3WXXY-7XXM2-YXX86-2XXMF'; // Debug / Demo
+    $text = $product['key'] ;
+
+    $dimensions = imagettfbbox($fontSize, $angle, $fontFile, $text ) ;
+
+    $xpos = $product['leaflet']['key_xcoord'] ;
+    $ypos = $product['leaflet']['key_ycoord'] - $dimensions[5] ;
+
+    switch ($product['leaflet']['image_type']) {
+        case 'image/jpeg':
+            $image = imagecreatefromjpeg($product['leaflet']['image']);
+            break ;
+        case 'image/png':
+            $image = imagecreatefrompng($product['leaflet']['image']);
+            break ;
+        case 'image/gif':
+            $image = imagecreatefromgif($product['leaflet']['image']);
+            break ;
+        default:
+            return ;
+    }
+
+    // @todo these should really come from $product['leaflet']
+    $dimensionsOfSpace = new stdClass();
+    $dimensionsOfSpace->width = 1355;
+    $dimensionsOfSpace->height = 270;
+
+
+    $dimensionsOfText = new stdClass();
+    $dimensionsOfText->width = abs($dimensions[2] - $dimensions[0]);
+    $dimensionsOfText->height = abs($dimensions[1] - $dimensions[7]);
+
+    $xoffset = abs($dimensionsOfSpace->width - $dimensionsOfText->width)/2;
+    $yoffset = abs($dimensionsOfSpace->height - $dimensionsOfText->height)/2;
+
+    $black = ImageColorAllocate($image, 0, 0, 0);
+<<<<<<< HEAD
+=======
+
+
+    // @todo these should really come from $product['leaflet']
+    $dimensionsOfSpace = new stdClass();
+    $dimensionsOfSpace->width = $product['leaflet']['key_box_width'] ;
+    $dimensionsOfSpace->height = $product['leaflet']['key_box_height'] ;
+
+
+    $dimensionsOfText = new stdClass();
+    $dimensionsOfText->width = abs($dimensions[2] - $dimensions[0]);
+    $dimensionsOfText->height = abs($dimensions[1] - $dimensions[7]);
+
+    $xoffset = abs($dimensionsOfSpace->width - $dimensionsOfText->width)/2;
+    $yoffset = abs($dimensionsOfSpace->height - $dimensionsOfText->height)/2;
+
+    $black = ImageColorAllocate($image, 0, 0, 0);
+>>>>>>> a348ad511d826490127d640484f6ef8664f92772
+    imagettftext($image, $fontSize, $angle, $xpos+$xoffset, $ypos+$yoffset, $black, $fontFile, $text);
+
+
+    $workImg = tempnam(Yii::getAlias('@frontend') . '/runtime/tmp', 'LEF') . '.jpg';
+
+    imagejpeg ($image, $workImg) ;
+
+?>
+<body>
+
+    <div class="page" style="background-image: url(<?= $workImg ?>);  "></div>
+    <div class="product-key" style="left:900px; top:500px; border:2px solid red;">
+
+    </div>
+
+</body>

@@ -1,0 +1,123 @@
+<?php
+
+namespace common\models;
+
+use Yii;
+
+/**
+ * This is the model class for table "digital_product".
+ *
+ * @property integer        $id
+ * @property string         $partcode
+ * @property string         $description
+ * @property integer        $is_digital
+ *
+ * @property CupboardItem[] $cupboardItems
+ * @property StockItem[]    $stockItems
+ */
+class DigitalProduct extends \yii\db\ActiveRecord
+{
+    /**
+     * @inheritdoc
+     */
+    public static function tableName()
+    {
+        return 'digital_product';
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function rules()
+    {
+        return [
+            [['partcode'], 'required'],
+            [['is_digital'], 'integer','max'=>1],
+            [['partcode', 'description'], 'string', 'max' => 255]
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function attributeLabels()
+    {
+        return [
+            'id'          => Yii::t('app', 'ID'),
+            'partcode'    => Yii::t('app', 'Partcode'),
+            'description' => Yii::t('app', 'Description'),
+            'is_digital'  => Yii::t('app', 'Is Digital'),
+        ];
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCupboardItems()
+    {
+        return $this->hasMany(CupboardItem::className(), ['digital_product_id' => 'id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getStockItems()
+    {
+        return $this->hasMany(StockItem::className(), ['digital_product_id' => 'id']);
+    }
+<<<<<<< HEAD
+
+
+    public function getMainImage()
+    {
+        $images = $this->images;
+        if ($images && count($images)) {
+            return $images[0];
+        }
+    }
+
+    public function getMainImageThumbnailTag() {
+        $image = $this->getMainImage() ;
+        if ($image) {
+            return $image->getImageThumbnailTag($this->description) ;
+        }
+    }
+
+    public function getMainImageTag($maxWidth = 100, $maxHeight = 100)
+    {
+        if (!($description = $this->description)) {
+            $description = 'Product image';
+        }
+
+        $image = $this->getMainImage() ;
+        if ($image) {
+            return $image->getImageTag($this->description) ;
+        }
+
+        return '<img src="/img/no-photo.jpg"
+                      height="100"
+                      width="100"
+                      title="' . htmlspecialchars($description) . '"
+                      alt="' . htmlspecialchars($description) . '"
+                      data-toggle="tooltip" />';
+    }
+
+
+    public function getImages()
+    {
+        return $this->hasMany(ProductImage::className(), ['digital_product_id' => 'id']);
+    }
+
+=======
+    
+    /**
+     * Builds and executes a SQL statement for truncating the DB table.
+     * @param string $table the table to be truncated. The name will be properly quoted by the method.
+     */
+    public function truncateTable()
+    {
+        $this->db->createCommand()->truncateTable(self::tableName())->execute();
+        Yii::trace('Dropped table before file processing' .__METHOD__.':'.__LINE__);
+    }
+>>>>>>> origin/Filefeeds_hk
+}

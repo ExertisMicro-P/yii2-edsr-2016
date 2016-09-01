@@ -1,0 +1,81 @@
+#leafletContainer {
+    width: 100%;
+    height: 100% ;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2000;
+    background-color: #CEE6F2 ;
+    display: none ;
+}
+#lec {
+    width: 100%;
+    height: 6.5em ;
+    position: relative;
+    top: 0;
+    left: 0;
+    padding: 4px;
+    background-color: #F51E1E ;
+    color: white;
+    text-align: center;
+}
+#leafletFull {
+    width: 100%;
+    position: absolute;
+    top: 7em;
+    left:1em ;
+}
+#dummyKey {
+    position: absolute;
+    font-family: Arial;
+    font-weight: bold;
+    font-size: 55pt;
+    background-color: rgba(247, 247, 0, 0.09);
+    z-index: 600 ;
+    top: -1000px ;
+    width: 1200px ;
+}
+.dimens {
+    display: inline-block;
+    width: 50px;
+    text-align: right;
+}
+.infoBlock {
+    /*border:1px solid white;*/
+    width: 250px;
+    height: 2.7em ;
+    display: inline-block;
+    margin-right: 2em;
+}
+.infoData {
+    width: 160px ;
+    float: right;
+    border: 1px solid white;
+    height: 2.7em ;
+    padding: 3px 0 0 0 ;
+}
+.iname {
+    float: left;
+    width: 6em ;
+    padding: 2px 0 0 0 ;
+}
+
+.jcrop-tracker.key-marker {
+    text-align: center ;
+    display: table ;
+}
+.jcrop-tracker.key-marker:after {
+    content: attr(data-content) ;
+    display: table-cell ;
+    vertical-align: middle;
+}
+
+.jcrop-tracker.logo-marker {
+    text-align: center ;
+    display: table ;
+}
+.jcrop-tracker.logo-marker:after {
+    content:  url(/img/ex-icon.png);
+    display: table-cell ;
+    vertical-align: middle;
+}

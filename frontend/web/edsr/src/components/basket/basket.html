@@ -1,0 +1,71 @@
+<!-- ko if: canBuy && document.location.pathname.indexOf('/checkout') < 0 -->
+
+<a href="#" class="basket" data-bind="click: showBasket">
+    <img src="/img/basket1.png" width="30"/>
+
+    <span data-bind="text: basketCount, visible: basketCount" class="badge"></span>
+</a>
+
+<!-- ko if: showingBasket -->
+    <!-- ko if: basketCount() == 0 -->
+    <ul class="dropdown-menu" role="menu" data-bind="css :{ visible: showingBasket}">
+        <li>
+            <h4 data-bind="css :{ visible: showingBasket}">Your basket is empty</h4>
+        </li>
+    </ul>
+    <!-- /ko -->
+
+    <!-- ko if: basketCount -->
+
+    <ul class="dropdown-menu" id="shopbasket" role="menu" data-bind="css :{ visible: showingBasket}">
+        <li>
+            <h4>Your Basket</h4>
+        </li>
+
+        <li>
+            <table class="table table-bordered">
+                <tbody>
+                <tbody data-bind="foreach: items">
+                    <tr data-bind="fadeVisible: active, css: {warning: inError}">
+                        <td><img data-bind="attr: {src: item.photo}" height="30"/></td>
+                        <td class="visible-md-block visible-lg-block"><span data-bind="html: item.partcode"></span><br/>
+                            <small data-bind="text: item.description.substr(0, 50)"></small>
+                        </td>
+                        <td data-bind="html: '&pound;' + parseFloat(item.cost).toFixed(2), visible: !$parent.isRetailView()"></td>
+                        <td><input data-bind="value: newQuantity, valueUpdate: 'keyup'" /></td>
+                        <td class="text-right" data-bind="html: '&pound;<span title=\'Hidden in Retail View. Change settings to reveal\'>??.??</span>', visible: item.isRetailView"></td>
+                        <td class="text-right" data-bind="html: '&pound;' + subtotal().formatMoney(2), visible: !item.isRetailView"></td>
+                        <td><a href="#"data-bind="event: {mouseup: $parent.removeAll}" rel="tooltip" title="Remove from Basket"><img src="/img/delete.png" /></a></td>
+                    </tr>
+                    <!-- ko if: maxLimitReached -->
+                    <tr>
+                        <td colspan="6" class="danger">Your basket is full.</td>
+                    </tr>
+                    <!-- /ko -->
+                    
+                    <!-- ko if: inError -->
+                    <tr>
+                        <td colspan="6" class="danger">You do not have enough credit.</td>
+                    </tr>
+                    <!-- /ko -->
+                </tbody>
+            </table>
+        </li>
+        <li>
+            <table class="table table-bordered">
+                <tbody>
+                <tr>
+                    <td class="text-right"><strong>Total</strong></td>
+                    <th class="text-right" data-bind="html: '&pound;' + totalCost().formatMoney(2), visible: isRetailView"><span title='Hidden in Retail View. Change settings to reveal'>??.??</span></th>
+                    <th class="text-right" data-bind="html: '&pound;' + totalCost().formatMoney(2), visible: !isRetailView"></th>
+                </tr>
+                </tbody>
+            </table>
+            <p class="text-right"><button type="button" id="checkoutBtn" class="btn btn-success" onclick="window.location.href='/checkout'">Checkout&nbsp;<i class="glyphicon glyphicon-chevron-right"></i> </button></p>
+        </li>
+    </ul>
+    <!-- /ko -->
+<!-- /ko -->
+<!-- /ko -->
+
+

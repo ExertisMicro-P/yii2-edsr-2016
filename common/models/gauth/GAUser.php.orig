@@ -1,0 +1,139 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: noelwalsh
+ * Date: 05/12/2014
+ * Time: 16:03
+ */
+
+namespace common\models\gauth;
+
+use Yii;
+use common\models\Account;
+use common\models\Stockroom;
+use kartik\password\StrengthValidator;
+
+class GAUser extends \amnah\yii2\user\models\User{
+
+    const STATUS_UNCONFIRMED_EMAIL_VALUE_10 = 10 ;
+
+    public $dummy ;                                             // Required to keep the password validator happy
+
+    public function rules()
+    {
+
+        // set initial rules
+        $rules = parent::rules() ;
+        $rules[] = [['newPassword'], StrengthValidator::className(),
+                            'userAttribute' => 'dummy',         // ***** NEED to create an empty input tag id=gauser-dummy
+                            'lower'         => 1,               // At least one lower case
+                            'upper'         => 1,               //      1 upper case
+                            'special'       => 1,               //      1 non-alphanumeric
+                            'digit'         => 1,               //      1 numeric
+                            'min'           => 8,               // At least 8 characters long
+                            'hasUser'       => false,           //
+                            'hasEmail'      => true
+                    ];
+        $rules[] = [['newPassword', 'newPasswordConfirm'], 'required', 'except' => ['emailsetup']] ;
+
+		$rules[] = ['account_id', 'safe'];
+
+        // admin crud rules
+        $rules[] = [['status'], 'default', 'value' =>  GAUser::STATUS_INACTIVE, 'on' => ['admin']];
+
+        return $rules ;
+    }
+
+
+    /**
+     * Finds user by email
+     *
+     * @param string $username
+     * @return static|null
+     */
+    public static function findByEmail($email)
+    {
+        return static::findOne(['email' => $email, 'status' => self::STATUS_ACTIVE]);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getAccount()
+    {
+        return $this->hasOne(Account::className(), ['id' => 'account_id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getStockrooms()
+    {
+        return $this->hasMany(Stockroom::className(), ['account_id' => 'account_id']);
+    }
+
+
+<<<<<<< HEAD
+
+    /**
+     * Send email confirmation to user
+     *
+     * @param UserKey $userKey
+     * @return int
+     */
+    public function sendEmailConfirmation($userKey)
+    {
+        /** @var Mailer $mailer */
+        /** @var Message $message */
+
+        // modify view path to module views
+        $mailer           = Yii::$app->mailer;
+        $oldViewPath      = $mailer->viewPath;
+        $mailer->viewPath = Yii::$app->getModule("user")->emailViewPath;
+
+        // send email
+        $user    = $this;
+        $profile = $user->profile;
+        $email   = $user->new_email !== null ? $user->new_email : $user->email;
+        $subject = 'Exertis Digital Stock Room: ' . Yii::t("user", "Email Confirmation");
+        $message  = $mailer->compose('confirmEmail', compact("subject", "user", "profile", "userKey"))
+            ->setTo($email)
+            ->setSubject($subject);
+
+        // check for messageConfig before sending (for backwards-compatible purposes)
+        if (empty($mailer->messageConfig["from"])) {
+            $message->setFrom(Yii::$app->params["adminEmail"]);
+        }
+        $result = $message->send();
+
+        // restore view path and return result
+        $mailer->viewPath = $oldViewPath;
+        return $result;
+    }
+=======
+    /**
+     * GET STOCK ROOM DETAILS
+     * ======================
+     * Locates all stockrooms for the current user and returns then details,
+     * the id and the user assigned name, for display
+     *
+     * @return array
+     */
+    public function getStockroomDetails () {
+        $result = [] ;
+        $stockRooms = $this->stockrooms ;
+
+        foreach ($stockRooms as $sroom) {
+            $result[] = ['id' => $sroom->id, 'name' => $sroom->name] ;
+        }
+
+        if(count($stockRooms) > 0) {
+            \Yii::$app->session['currentStockRoomId'] = $stockRooms[0]['id'] ;
+        }
+
+        return ['stockrooms' => $result] ;
+    }
+
+
+>>>>>>> origin/stockroom
+}

@@ -1,0 +1,42 @@
+<!--
+  The navigation UI that is docked to the top of the window. Most of this markup simply
+  follows Bootstrap conventions. The only Knockout-specific parts are the data-bind
+  attributes on the <li> elements.
+-->
+
+<header>
+    <nav class="navbar" role="navigation"
+                data-bind="css : navOptions().options.class">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed"
+                        data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <h1 class="navbar-brand">
+                    <a href="#" data-bind="html: navOptions().brandLabel, attr: {href: navOptions().brandUrl}">Brand</a>
+                </h1>
+            </div>
+
+            <div class="collapse navbar-collapse">
+                <ul class="nav navbar-nav" data-bind="foreach: navItems">
+                    <li data-bind="css: cssclass() ">
+                        <!-- ko if: url[2] -->
+                        <a href="#" data-bind="html: label, attr :{href: url[1] ? url[1] : url[0]}, click: $parent.process">Home</a>
+                        <!-- /ko -->
+                        <!-- ko if: !url[2] -->
+                        <a href="#" data-bind="html: label, attr :{href: url[1] ? url[1] : url[0]}">Home</a>
+                        <!-- /ko -->
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+</header>
+
+

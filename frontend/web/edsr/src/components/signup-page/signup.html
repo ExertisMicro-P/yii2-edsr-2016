@@ -1,0 +1,86 @@
+<div id="vpb_pop_up_background" data-bind="click: hide_popup"></div><!-- General Pop-up Background -->
+
+<!-- Login Box Starts Here -->
+
+<div id="vpb_login_pop_up_box" class="vpb_signup_pop_up_box">
+    <div align="left" class="header">Login to EDSR</div><br clear="all">
+
+    <div data-bind="visible: loggedIn()">
+        <h2>You have successfully logged in</h2>
+    </div>
+    <div data-bind="visible: !loggedIn()">
+        <div align="left">To exit this login box, click on the cancel button or outside this box...</div>
+
+        <br clear="all"><br clear="all">
+
+        <div id="_login">
+            <form method="post" action="/login">
+
+                <div class="label" align="left">Your Email:</div>
+                <div class="input" align="left">
+                    <div class="indic" data-bind="css: {ok: userNameOk, bad : !userNameOk()}"></div>
+                    <input type="text" autocomplete="off" name="GALoginForm[username]"
+                           data-bind="value: userName, valueUpdate: 'afterkeydown'" class="vpb_textAreaBoxInputs">
+                </div>
+                <br clear="all">
+                <small class="alert-danger error"
+                       data-bind="visible: (userName() != '' && !userNameOk())">Unknown Email</small>
+                <br clear="all">
+
+
+
+                <div class="label" align="left">Your Password:</div>
+                <div class="input" align="left">
+                    <div class="indic" data-bind="css: {ok: passwordOk, bad : !passwordOk()}"></div>
+                    <input type="password" id="passw" name="GALoginForm[password]"
+                           data-bind="value: password, valueUpdate: 'afterkeydown'"
+                           class="vpb_textAreaBoxInputs">
+                </div>
+                <br clear="all">
+                <small class="alert-danger error" data-bind="text: errmsg, visible : errmsg"></small>
+
+
+
+                <div class="label" align="left">Remember Me</div>
+                <div class="input" align="left">
+                    <input type="hidden" name="GALoginForm[rememberMe]" value="0">
+                    <input type="checkbox" id="loginform-rememberme" name="GALoginForm[rememberMe]" value="1" checked="">
+                </div>
+
+                <br clear="all"><br clear="all">
+
+                <div id="opt-auth">
+                    <h4>Authentication Code:</h4>
+
+                    <div class="input authcode" align="left">
+                        <div class="indic" data-bind="css: {ok: gauthOk, bad : !gauthOk()}"></div>
+                        <input type="text" class="otp_input"  autocomplete="off" name="Guath[code]"
+                               maxlength="6"
+                               data-bind="value: gauthCode, valueUpdate: 'afterkeydown'" class="vpb_textAreaBoxInputs">
+                        <p>Enter the 6 digit code from your Google® authenticator Application</p>
+
+                        <br clear="all">
+                        <small class="alert-danger error" data-bind="text: authmsg, visible : authmsg"></small>
+                        <br clear="all">
+
+                    </div>
+                </div>
+
+                <div class="label" align="left">&nbsp;</div>
+
+                <div class="input" align="left" data-bind="visible: !loggingIn()">
+                    <a href="#" class="vpb_general_button"
+                       data-bind="click: hide_popup">Cancel</a>
+                    <a href="#" class="vpb_general_button"
+                       data-bind="click: doLogin, css : {'disabled': !validDetails() || !gauthOk()}">Login</a>
+
+                </div>
+            </form>
+        </div>
+
+
+
+    </div>
+    <br clear="all"><br clear="all">
+</div>
+<!-- Login Box Ends Here -->

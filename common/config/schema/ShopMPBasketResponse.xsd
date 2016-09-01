@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--Created with Liquid XML Studio Designer Edition 8.1.7.2743 (http://www.liquid-technologies.com)-->
+<xs:schema xmlns:tns="http://www.micro-p.com/mdfs/fulfillment" attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="basketResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="timestamp" type="xs:string" />
+                <xs:element name="status">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:enumeration value="SUCCESS" />
+                            <xs:enumeration value="FAIL" />
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+                <xs:element name="token" type="TMSToken" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>A unique reference to a Bagging call from the calling System.
+will be appended to notificationURL for all callbacks</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="orderId" type="orderId" minOccurs="0" />
+                <xs:element name="errors" minOccurs="0">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="error" type="errorType" minOccurs="0" maxOccurs="unbounded" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:complexType name="errorType">
+        <xs:sequence>
+            <xs:element name="errorCode">
+                <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:enumeration value="UNABLETOSAVEORDER" />
+                            <xs:enumeration value="XMLINVALID" />
+                            <xs:enumeration value="PARTCODEUNKNOWN" />
+                            <xs:enumeration value="DUPLICATEORDER" />
+                            <xs:enumeration value="ERRORINFO" />
+                            <xs:enumeration value="UNKNOWNEXCEPTIONRAISED" />
+                        </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="errorDetail" type="xs:string" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="orderId">
+        <xs:restriction base="xs:string" />
+    </xs:simpleType>
+    <xs:simpleType name="TMSToken">
+        <xs:annotation>
+            <xs:documentation>A token or session ID identifying this basket on TMS. Sent back later to request closedown of the basket on TMS</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string" />
+    </xs:simpleType>
+</xs:schema>

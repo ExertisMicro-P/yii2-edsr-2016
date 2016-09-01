@@ -1,0 +1,165 @@
+<div id="vpb_pop_up_background" xdata-bind="click: hide_popup"></div><!-- General Pop-up Background -->
+
+<!-- Login Box Starts Here -->
+
+<!--<div id="vpb_login_pop_up_box" class="vpb_signup_pop_up_box col-md-6">-->
+<div id="vpb_login_pop_up_box" class="col-md-3">
+
+    <div class="panel panel-danger" data-bind="slideVisible: !resetting()">
+        <div class="panel-heading"><h4>Login to EDSR</h4></div>
+        <div class="panel-body">
+
+            <div data-bind="visible: loggedIn()">
+                <h4>You have successfully logged in</h4>
+            </div>
+
+
+            <div data-bind="visible: passwordReset()">
+                <h4>Please check your email for Password Reset instructions.</h4>
+            </div>
+
+
+            <div data-bind="visible: !loggedIn() && !passwordReset()">
+                <!--<div align="left">To exit this login box, click on the cancel button or outside this box...</div> -->
+
+                <div class="row">
+
+                    <div id="_login" class="col-md-10">
+                        <form method="post" action="/login">
+
+                            <div class="form-group">
+                                <label for="GALoginForm[username]">Your Email:</label>
+
+                                <div class="input" align="left">
+                                    <div class="indic" data-bind="css: {ok: userNameOk, bad : !userNameOk()}"></div>
+                                    <input type="text" autocomplete="off" name="GALoginForm[username]"
+                                           data-bind="value: userName, valueUpdate: 'afterkeydown'"
+                                           class="vpb_textAreaBoxInputs">
+                                </div>
+                                <small class="alert-danger error"
+                                       data-bind="visible: (userName() != '' && !userNameOk())">Unknown Email
+                                </small>
+                            </div>
+                            <!-- form group -->
+
+
+                            <div class="form-group">
+                                <label for="GALoginForm[password]">Your Password:</label>
+
+                                <div class="input" align="left">
+                                    <div class="indic" data-bind="css: {ok: passwordOk, bad : !passwordOk()}"></div>
+                                    <input type="password" id="passw" name="GALoginForm[password]"
+                                           data-bind="value: password, valueUpdate: 'afterkeydown'"
+                                           class="vpb_textAreaBoxInputs">
+                                </div>
+
+                                <small class="alert-danger error" data-bind="html: errmsg, visible : errmsg"></small>
+                            </div>
+                            <!-- form group -->
+
+
+                            <div class="checkbox">
+                                <label><input type="checkbox" id="loginform-rememberme" name="GALoginForm[rememberMe]"
+                                              value="1" checked="">Remember Me</label>
+                            </div>
+                            <a href="#" class=""
+                               data-bind="click: showResetPassword, css : {'disabled': (validPasswordResetDetails() || (!gauthOk() && useGauthify())}">Forgotten
+                                Password</a>
+
+
+                            <div class="row">
+
+                                <div id="opt-auth" data-bind="visible: useGauthify()">
+                                    <h4>Authentication Code:</h4>
+
+                                    <div class="input authcode" align="left">
+                                        <div class="indic" data-bind="css: {ok: gauthOk, bad : !gauthOk()}"></div>
+                                        <input type="text" class="otp_input vpb_textAreaBoxInputs" autocomplete="off"
+                                               name="Guath[code]"
+                                               maxlength="6"
+                                               data-bind="value: gauthCode, valueUpdate: 'afterkeydown'">
+
+                                        <p>Enter the 6 digit code from your Google® authenticator Application</p>
+
+                                        <br clear="all">
+                                        <small class="alert-danger error"
+                                               data-bind="text: authmsg, visible : authmsg"></small>
+                                        <br clear="all">
+
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div class="row">
+                                <div class="col-md-12" align="center" data-bind="visible: loggingIn()"><img
+                                        src="/img/ajax-loader.gif" title="Please wait..."/></div>
+                                <div class="col-md-12" align="center" data-bind="visible: !loggingIn()">
+                                    <!-- a href="#" class="vpb_general_button"
+                                       data-bind="click: hide_popup">Cancel</a -->
+
+                                    <a href="#" class="vpb_general_button"
+                                       data-bind="click: doLogin, css : {'disabled': (!validDetails() || (useGauthify() && gauthOK()) ) }">Login</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-danger" data-bind="slideVisible: resetting()" style="display:none">
+        <div class="panel-heading"><h4>Forgotten Password</h4></div>
+        <div class="panel-body">
+
+            <div>Enter your email address and we'll help you reset your password.</div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <form method="post" action="/login">
+
+                        <div class="form-group">
+                            <label for="GALoginForm[username]">Your Email:</label>
+
+                            <div class="input" align="left">
+                                <div class="indic" data-bind="css: {ok: userNameOk, bad : !userNameOk()}"></div>
+                                <input type="text" autocomplete="off" name="GALoginForm[username]"
+                                       data-bind="value: userName, valueUpdate: 'afterkeydown'"
+                                       class="vpb_textAreaBoxInputs">
+                            </div>
+                            <small class="alert-danger error"
+                                   data-bind="visible: (userName() != '' && !userNameOk())">Unknown Email
+                            </small>
+
+                            <small class="alert-danger error" data-bind="html: pwrerrmsg, visible : pwrerrmsg"></small>
+                        </div>
+                        <!-- form group -->
+
+
+                        <div class="col-md-12" align="center" data-bind="visible: loggingIn()"><img
+                                src="/img/ajax-loader.gif" title="Please wait..."/></div>
+                        <div class="col-md-12" align="center" data-bind="visible: !loggingIn()">
+                            <!-- a href="#" class="vpb_general_button"
+                               data-bind="click: hide_popup">Cancel</a -->
+                            <a href="#" class="vpb_general_button"
+                               data-bind="click: doResetPassword, css : {'disabled': !validPasswordResetDetails()}">Reset</a>
+
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+            <a href="#" class=""
+               data-bind="click: showResetPassword">Login</a>
+
+
+        </div>
+    </div>
+
+
+    <br clear="all"><br clear="all">
+</div>
+<!-- Login Box Ends Here -->

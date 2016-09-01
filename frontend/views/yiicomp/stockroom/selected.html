@@ -1,0 +1,193 @@
+<button class="btn btn-primary" onclick="(function ( $event ) { bootstro.start('.bootstro', {set:1}); })();"
+        data-bind="visible: showingBasket">Help / Demo
+</button>
+
+
+<div class="container-fluid" style="display:none" data-bind="css: {'kv-grid-loading': printing}" id="basket">
+
+    <div class="row">
+        <div class="col-xs-12  bitem">
+            <h3 data-bind="fadeVisible: totalProducts">You are taking <span data-bind="text: selectedCount"></span> product<span
+                    data-bind="visible: selectedCount() > 1">s</span> from your Stockroom</h3>
+
+            <h3 class="text-color-red" data-bind="fadeVisible: !totalProducts()">You have no Stock Items selected</h3>
+
+            <!--<p>How many of each product do you want to send?</p>-->
+        </div>
+    </div>
+
+    <div class="row row-centered" id="basket-contents">
+        <div class="col-xs-12" data-bind="foreach: selected">
+            <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4 bitem bootstro"
+                 data-bootstro-title="How Many?"
+                 data-bootstro-content="Choose how many keys to send. The first available keys will be sent."
+                 data-bootstro-width="400px"
+                 data-bootstro-placement="right"
+                 data-bootstro-step="10"
+                 data-bootstro-set="1"
+                 data-bind="fadeVisible: removing"
+                    >
+                <div class="inb col-xs-12">
+                    <div class="row" data-bind="css: {insufficient: inError}">
+                        <div class="col-xs-3 col-sm-4 col-md-3 col-lg-3">
+                            <img src="" data-bind="attr: {src: photo}" width="48" height="48"/>
+                        </div>
+
+                        <div class="col-xs-6 col-sm-5 col-md-7 col-lg-7 desc">
+                            <p>
+                                <small data-bind="text: partcode"></small>
+                            </p>
+                            <span class="hidden-xs" data-bind="text: description"></span>
+                        </div>
+
+                        <div class="col-xs-3 col-sm-3 col-md-2 col-lg-2 ">
+                            <!-- ko if: available() > 1 -->
+                            <input type="text" name="quant"
+                                   data-bind="value: quantity, css: {valerr: badQuant }, numeric: quantity, valueUpdate: 'afterkeydown'"
+                                   value="" size="2"/>
+                            <br/>
+                            <span class="small">max&nbsp;<span data-bind="text:available"></span></span>
+                            <!-- /ko -->
+                            <a class="del" data-bind="click: removeItem"
+                               title="Click this to put this back in the Stockroom"></a>
+                            <!-- ko if: available() == 1 -->
+                            <!-- /ko -->
+                        </div>
+                    </div>
+                    <div class="row xbordered">
+                        <div class="col-xs-12 col-md-4"><span data-bind="text: 'PO:' +  po(), visible: po"></span></div>
+                        <div class="col-xs-12 col-md-8 key text-left" data-bind="text: key"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="basketmsg" class="row row-centered" data-bind="slideVisible: errormsg() != ''">
+        <div class="col-xs-12">
+            <h3 data-bind="html:errormsg"></h3>
+        </div>
+    </div>
+
+
+    <div class="row row-centered" data-bind="slideVisible : showingDForm">
+        <div class="col-xs-6 col-centered" id="deliverKeys">
+            <button type="button" class="close"
+                    data-bind="click: deliverKeys"
+                    xdata-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+            </button>
+
+            <h3>You are about to mark the above <span data-bind="text: totalProducts"></span> key<span
+                    data-bind="visible: totalProducts() > 1">s</span> as delivered to customers</h3>
+
+            <form class="form-inline row-centered" role="form" action="#" data-bind="submit: deliverAll">
+
+                <div class="form-group">
+                    <label for="onumber">Unique Reference:</label>
+                    <input type="text" class="form-control" data-bind="value: onumber, css: {err: badonumber}, valueUpdate: 'afterkeydown'"
+                           name="onumber" id="onumber"/>
+                </div>
+
+                <button type="submit" class="btn btn-default" data-bind="attr: {disabled: badonumber}"><span class="glyphicon glyphicon-envelope"></span> Deliver</button>
+            </form>
+
+        </div>
+    </div>
+
+    <div class="row row-centered" data-bind="slideVisible : showingEForm">
+        <div class="col-xs-12 col-centered" id="emailKeys">
+
+            <button type="button" class="close"
+                    data-bind="click: emailKeys"
+                    xdata-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+            </button>
+
+            <h3>You are about to email <span data-bind="text: totalProducts"></span> key<span
+                    data-bind="visible: totalProducts() > 1">s</span> for your selected products</h3>
+
+            <form class="form-inline row-centered" role="form" action="#" data-bind="submit: emailToRecipient">
+                <div class="form-group">
+                    <label for="rname">Recipient's Name:</label>
+                    <input type="text" class="form-control" data-bind="value: recipient, css: {err: badrname}, valueUpdate: 'afterkeydown'"
+                           name="rname" id="rname"/>
+                </div>
+
+                <div class="form-group">
+                    <label for="remail">Email address:</label>
+                    <input type="email" class="form-control"
+                           data-bind="value: email, css: {err: !validEmail()}, valueUpdate: 'afterkeydown'" name="email"
+                           id="remail"/>
+                </div>
+                <div class="indic" data-bind="css: {ok: emailOk, bad : !emailOk()}"></div>
+
+                <br/><br/>
+
+                <div class="form-group">
+                    <label for="onumber">Unique Reference:</label>
+                    <input type="text" class="form-control" data-bind="value: onumber, css: {err: badonumber}, valueUpdate: 'afterkeydown'"
+                           name="onumber" id="onumber"/>
+                </div>
+
+                <button type="submit" class="btn btn-default" data-bind="attr: {disabled: !canEmail()}"><span class="glyphicon glyphicon-envelope"></span> Send
+                </button>
+            </form>
+            <div class="col-xs-12 row-centered">
+                <br/>All fields are required
+            </div>
+            <div class="col-xs-12 row-centered note">
+                <!--                NOTE: The keys will be logged in a 'cupboard' identified by the email address.<br />
+                                        If this address has already been used, they will be added to an exising cupboard -->
+            </div>
+        </div>
+    </div>
+
+    <div class="row row-centered">
+        <div class="col-xs-12 actbuts">
+            <div class="btn-group-horizontal btn-group-lg" role="group" aria-label="krajee-book-detail-buttons">
+                <button type="button" class="keyact btn btn-default hidden"
+                        data-bind="click: viewKeys"
+                        title="" data-toggle="tooltip" data-original-title="View the keys">
+                    <span class="glyphicon glyphicon-zoom-in"></span></button>
+
+                <button type="button" class="keyact btn btn-default xhidden" title=""
+                        data-bind="click: deliverKeys, fadeVisible: totalProducts"
+                        data-toggle="tooltip" data-original-title="Use this when delivering manually. They will be moved from the Stockroom into Order History">
+                    <span class="glyphicon glyphicon-ok"></span> Mark All Delivered
+                </button>
+
+                <button type="button" class="keyact btn btn-default bootstro"
+                        data-bootstro-title="Send Keys"
+                        data-bootstro-content="You'll be asked for the email address of who to send it to."
+                        data-bootstro-width="400px"
+                        data-bootstro-placement="right"
+                        data-bootstro-step="11"
+                        data-bootstro-set="1"
+                        data-bind="click: emailKeys, fadeVisible: totalProducts"
+                        title="" data-toggle="tooltip" data-original-title="Email the keys"><span
+                        class="glyphicon glyphicon-envelope"></span> Email All Keys
+                </button>
+
+
+                <button type="button" class="keyact btn btn-default xhidden" title=""
+                        data-bind="click: printKeys, fadeVisible: totalProducts"
+                        data-toggle="tooltip" data-original-title="Print the keys to a PDF">
+                    <span class="glyphicon glyphicon-print"></span> Print These Keys
+                </button>
+
+
+                <!--
+                                <button type="button" class="keyact btn btn-default"
+                                        title="" data-toggle="tooltip" data-original-title="Review previous orders"><span class="glyphicon glyphicon-tasks"></span></button>
+                -->
+            </div>
+
+            <div class="row">
+                <br />
+                <button class="btn btn-default" href="#" data-bind="click: backToProducts, clickBubble: false">Go back to
+                    Stock Room
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>

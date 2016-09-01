@@ -1,0 +1,72 @@
+
+@mixin invert {
+    -webkit-transform: rotate(180deg) ;
+    -moz-transform: rotate(180deg) ;
+    -o-transform: rotate(180deg) ;
+    -ms-transform: rotate(180deg) ;
+}
+
+@mixin vertical-align {
+    position: absolute;
+    overflow: visible;
+    left: 0;
+    right: 0;
+    width: 150mm;   /* you must specify a width */
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid #000088;
+    //background-color: #EEDDFF;
+
+    //position: relative;
+    //top: 50%;
+    //-webkit-transform: translateY(50%);
+    //-ms-transform: translateY(50%);
+    //transform: translateY(50%);
+}
+
+.myfixed {
+    @include vertical-align;
+}
+
+    @page {
+        //size: a4 ;
+        margin: 0 0 ;
+        padding: 0 0 ;
+
+        resetpagenum: 1;
+
+        //background-gradient: linear #FFFFFF #FFFF44 0 0.5 1 0.5;
+    }
+
+    //@page landscape {
+    //    size: landscape ;
+    //}
+
+
+.page {
+    background-size: 210mm 297mm;
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: 210mm ;
+    height : 297mm ;
+
+    //page-break-after: always;
+    img {
+        width: 210mm ;
+        height : 297mm ;
+    }
+    .product-key {
+        position: absolute;
+        top: 400px;
+    }
+}
+/**
+* Need to keep product-key at the document top level (ie, a first child of body)
+* because mPDF can only process absolute positioning inside the body
+*/
+.product-key {
+    position: absolute;
+    top: 400px;
+}

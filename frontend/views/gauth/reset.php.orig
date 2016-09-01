@@ -1,0 +1,121 @@
+<?php
+
+use yii\helpers\Html;
+use yii\bootstrap\ActiveForm;
+use kartik\password\PasswordInput;
+
+$this->registerJsFile('/js/registration.js', ['depends' => 'yii\web\YiiAsset']);
+
+/**
+ * @var yii\web\View $this
+ * @var yii\widgets\ActiveForm $form
+ * @var amnah\yii2\user\models\User $user
+ * @var bool $success
+ * @var bool $invalidKey
+ *
+ */
+
+$this->title = Yii::t('user', 'Reset');
+$this->params['breadcrumbs'][] = $this->title;
+?>
+<div class="confirm row">
+    <article class="contact">
+
+        <div id="doreg" xstyle="display:none">
+            <div class="short-top">
+                <h2>Account qConfirmed : Step 2 of 3</h2>
+                <p>Thank you for confirming your email address. You are now ready to create your site passsword.</p>
+                <p class="smaller">Once this is complete, we will send you another email with details of the final step, your Google Authentication signup</p>
+
+
+                <div class="col-md-12 loader" align="center"><img src="/img/ajax-loader.gif" title="Please wait..." /></div>
+            </div>
+
+
+            <div class="row">
+                <div class="col-lg-12">
+                    <input type="hidden" id="gauser-dummy" />
+
+                    <?php $form = ActiveForm::begin(['id' => 'reset-form', 'layout' => 'horizontal',
+                                                     'enableClientValidation' => true,
+                                                     'enableAjaxValidation' => false]); ?>
+
+                    <?= Html::HiddenInput('key', $userKey) ?>
+                    <?=
+                        $form->field($user, 'newPassword')->widget(PasswordInput::classname(), ['size'=>'sm',
+                                        'pluginOptions' => ['toggleMask' => false,
+                                                            'userField' => 'dummy',             // the js breaks without a real input
+                                                            'hasUser'   => false,
+                                                            'hasEmail'  => false
+                                                         ]
+                                ]);
+                    ?>
+                    <?= $form->field($user, 'newPasswordConfirm')->passwordInput() ?>
+
+                    <div id="rerrs" class="has-error">
+                        <div class="help-block"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <?= Html::submitButton(Yii::t('user', 'Create'), ['class' => 'btn submit']) ?>
+                    </div>
+                    <?php ActiveForm::end(); ?>
+                </div>
+            </div>
+        </div>
+
+        <div id="rdone" style="display:none">
+            <div class="short-top">
+                <h2>Account Confirmed : Step 3 of 3</h2>
+                <p>You have now completed the registration process on this site</p>
+<<<<<<< HEAD
+                <p class="smaller">We have sent you an email with the final instructions on how to configure your <a href="https://support.google.com/accounts/answer/1066447?hl=en"><strong>Google Authenticator</strong></a> App on your mobile phone</p>
+=======
+>>>>>>> origin/stockroom
+
+
+                <p class="smaller col-md-8">Your final step is to install Google Authenticator on your mobile phone
+                    If you don't already have the app, please view the
+                    <a href="https://support.google.com/accounts/answer/1066447?hl=en"  title="Instructions for Google Authenticator">Google Authenticator installation instructions here.</a>
+                    <br /><br />
+Google Authenticator uses your mobile phone to generate an extra password which you will need every time you log into your digital stockroom. Google Authenticator works with iOS, Android, and Blackberry devices
+                    <br /><br />
+
+                    Google Authenticator is installed, you need to have it create an account for your Digital Stock Room, which is most easily done by
+                    using the app to scan this QR Code</p>
+
+
+                <p class="col-md-4">
+                    <img id="gaqrurl" src="<?= $ga->qrUrl ?>" width="250" height="250" />
+                </p>
+
+                <p class="smaller col-md-12">
+                If you can't use the QR Code, you can visit the following page in your mobile browser
+                    <br /><br />
+                    <span id="gaezurl"></span>
+
+                    <br /><br />
+                Alternatively, you can manually set up yout account in the Google Authenticator app by entering the following details:
+                    <br /><br />
+                <strong>GA Account Name :</strong> <span id="gaaccount"><?= $ga->account ?></span>
+                    <br /><br />
+                <strong>GA Key:</strong> <span id="gakey"><?= $ga->key ?></span>
+
+                    <br /><br />
+                    Once your Google Authenticator account is created, you can proceed to login to your Exertis Digital Stock Room account.
+
+                    <br /><br />
+
+                    To find out more about the Exertis Digital Stock Room, please visit
+
+                    <a href="https://stockroom.exertis.co.uk" title="Exertis Digital Stock Room "/>https://stockroom.exertis.co.uk</a?
+
+                </p>
+
+
+                <div style="clear:both"></div>
+            </div>
+        </div>
+    </article>
+</div>
+<?php

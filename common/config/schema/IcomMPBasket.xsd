@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--Created with Liquid XML Studio Designer Edition 8.1.7.2743 (http://www.liquid-technologies.com)-->
+<xs:schema xmlns:tns="http://www.micro-p.com/mdfs/fulfillment" elementFormDefault="qualified" targetNamespace="http://www.micro-p.com/mdfs/fulfillment" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:simpleType name="accountNumber">
+        <xs:annotation>
+            <xs:documentation>a valid Exertis account number</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:length value="8" />
+            <xs:pattern value="((E[CEFTXZ])|(G[CEV])|(M[CDELMNSTVXZ]))[0-9]{6}" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="orderId">
+        <xs:annotation>
+            <xs:documentation>The TMS Order ID or reference.
+Icom will use just 6 digits.
+Lebara will use LE followed by 6 digits
+Lebara will use LE followed by 6 digits
+SalSac will use SS followed by 6 digits
+EE SalSac from EMM will use EE followed by 6 digits
+ManualOrders = MANORD followed by 
+</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="((EE)[\w]{6})|((SS)[\w]{6})|((LE)[\w]{6})|([\w]{8})|([-A-Z0-9 _]{0,27}EDR:[0-9]{6})" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="userId">
+        <xs:annotation>
+            <xs:documentation>A TMS User ID or reference which allow us to identify which user created the basket.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string" />
+    </xs:simpleType>
+    <xs:simpleType name="partCode">
+        <xs:annotation>
+            <xs:documentation>a valid Exertis Partcode. # &amp; @ codes accepted also</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[-A-Z0-9#@._/]+" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="userEmailAddress">
+        <xs:annotation>
+            <xs:documentation>The Email address of the user performing the bagging. This may be used for notifying the user of the Serial Numbers (IMEI/ICCID/MPN etc) being picked at despatch time.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string" />
+    </xs:simpleType>
+    <xs:simpleType name="TMSToken">
+        <xs:annotation>
+            <xs:documentation>A token or session ID identifying this basket on TMS. Sent back later to request closedown of the basket on TMS</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string" />
+    </xs:simpleType>
+    <xs:simpleType name="TMSNotificationURL">
+        <xs:annotation>
+            <xs:documentation>The URI of the script on TMS to hit with a HTTP GET request to indicate that bagging has been completed or timed out.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:anyURI" />
+    </xs:simpleType>
+    <xs:simpleType name="baggingTypeOptions">
+        <xs:annotation>
+            <xs:documentation>2 = Autobagging - all items are thrown into one bag, or as directed by bagTogether in BasketLine.
+3 = Invoke Bagging UI and allow user to define bags using a drag &amp; drop interface</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string" />
+    </xs:simpleType>
+    <xs:complexType name="basketHeaderType">
+        <xs:annotation>
+            <xs:documentation>Data which applies to this basket</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="account" type="tns:accountNumber">
+                <xs:annotation>
+                    <xs:documentation>A valid Exertis Micro-P account number</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="orderId" type="tns:orderId">
+                <xs:annotation>
+                    <xs:documentation>A reference to a an Order in the calling system, which
+is used as a Customer PO through MDFS and Oracle.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="userId" type="tns:userId">
+                <xs:annotation>
+                    <xs:documentation>A reference ID created by the calling system which refers to the User placing the order</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="userEmailAddress" type="tns:userEmailAddress">
+                <xs:annotation>
+                    <xs:documentation>The email address of the user placing the order. Any email notifications will be sent to this address</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="token" type="tns:TMSToken">
+                <xs:annotation>
+                    <xs:documentation>A unique reference to a Bagging call from the calling System.
+will be appended to notificationURL for all callbacks</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="notificationURL" type="tns:TMSNotificationURL">
+                <xs:annotation>
+                    <xs:documentation>A URL which MDFS will hit one completion fof Bagging (both for UI and autobagging)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="baggingType" type="tns:baggingTypeOptions">
+                <xs:annotation>
+                    <xs:documentation>2 = Autobagging - all items are thrown into one bag, or as directed by bagTogether in BasketLine.
+3 = Invoke Bagging UI and allow user to define bags using a drag &amp;amp; drop interface</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="operationOptions" type="xs:integer" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Controls extra operations which may be needed. For example 1 = Create Order. If absent, we default to 0 which means do not create Order.
+					Icom would use 0 as they send their order into EDI directly. Lebara would use 1 as MDFS needs to create the order.</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="deliveryDetails" type="tns:deliveryDetailsType" minOccurs="0" />
+            <xs:element name="DirectDebitDetails" type="tns:DirectDebitDetailsType" minOccurs="0" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="basketLineType">
+        <xs:annotation>
+            <xs:documentation>A single basket line, specifying the customer choice.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="partcode" type="tns:partCode">
+                <xs:annotation>
+                    <xs:documentation>Any valid Exertis Micro-P Partcode (SKU)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="quantity">
+                <xs:simpleType>
+                    <xs:restriction base="xs:integer">
+                        <xs:minInclusive value="1" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="imageURL" type="xs:anyURI">
+                <xs:annotation>
+                    <xs:documentation>An absolute URL to a thumbnail image which can be used in the graphical baggging interface.
+
+Example (based on product http://www.exertismicro-p.co.uk/products/DESKTOP-PC/LENOVO/p2010212/LENOVO-ThinkCentre-Edge-72-SFF-Desktops-DESKTOP-PC-RCFHJUK.aspx)
+The URL would be
+http://www.exertismicro-p.co.uk/ImagesPortal/UK/Catalogue/product/OR30200000285521.jpg</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="shortDescription">
+                <xs:annotation>
+                    <xs:documentation>A short (one-line) description of the product.
+Allows the user to better differentiate between products which may have similar product codes or images
+
+Example (based on product http://www.micro-p.com/products/DESKTOP-PC/LENOVO/p2010212/LENOVO-ThinkCentre-Edge-72-SFF-Desktops-DESKTOP-PC-RCFHJUK.aspx)
+The shortDescription would be
+'Lenovo ThinkCentre Edge 72 3493HJG Small Desktop PC Pentium (G2020) 2.9GHz 4GB (1x4GB) 500GB DVD±RW LAN Windows 7 Pro 64-bit/Windows 8 Pro 64-bit RDVD (Intel HD Graphics)'
+
+</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="255" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="productName">
+                <xs:annotation>
+                    <xs:documentation>Example (based on product http://www.micro-p.com/products/DESKTOP-PC/LENOVO/p2010212/LENOVO-ThinkCentre-Edge-72-SFF-Desktops-DESKTOP-PC-RCFHJUK.aspx)
+The productName would be 'LENOVO | ThinkCentre Edge 72 SFF Desktops'
+
+</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="128" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="bagId" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>BasketLines having the same bagId
+will be bagged together. This is primarily intended
+to be used when baggingType = 2 to auto create
+multiple bags, not just one. For example, this allows an order to have more than one Handset/SIM pairing.
+                        Minimum value if present is 1.
+                    If absent, it will be assumed to be 0. All items with bagId=0 will be bagged toegther.</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="tns:bagIdType">
+                        <xs:minInclusive value="1" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="pairingId" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>BasketLines having the same pairingId
+will be paired together. This is primarily intended
+to be used when baggingType = 2 to define Handset and SIM pairing. You should not attempt to pair anything other than Handsets and SIMs.
+                        Only one Handset and one SIM may share the same pairTogether ID.
+                        Minimum value if present is 1.
+                    If absent, it will be assumed to be 0 which means no pairing</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:integer">
+                        <xs:minInclusive value="1" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="price" type="xs:float" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>RCH 20160726 - Price to charge customer on SOP</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="labelType">
+        <xs:sequence>
+            <xs:element name="type" type="xs:string" />
+            <xs:element name="labelText" type="xs:string" />
+            <xs:element name="bagId" type="tns:bagIdType" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="bagIdType">
+        <xs:restriction base="xs:integer" />
+    </xs:simpleType>
+    <xs:complexType name="deliveryDetailsType">
+        <xs:sequence>
+            <xs:element name="firstname">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="64" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="lastname">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="64" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="housenumber">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="32" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="streetname">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="256" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="addressline2" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="256" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="city">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:maxLength value="64" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="postcode">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:minLength value="3" />
+                        <xs:maxLength value="9" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="emailaddress" type="xs:string" minOccurs="0" />
+            <xs:element name="phone" type="xs:string" minOccurs="0" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="DirectDebitDetailsType">
+        <xs:annotation>
+            <xs:documentation>Direct Debit sort code and account number should be encrypted.</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="DDSortCode">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:minLength value="6" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="DDAccountNumber">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:minLength value="8" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="DDEncType">
+                <xs:annotation>
+                    <xs:documentation>Indicates the encoding/encryption method used to protect the DirectDebit elements</xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="JEM" />
+                        <xs:enumeration value="EE" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:element name="Basket">
+        <xs:annotation>
+            <xs:documentation>A container for both header and multiple lines</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="basketHeader" type="tns:basketHeaderType" />
+                <xs:element name="basketContent">
+                    <xs:complexType>
+                        <xs:sequence minOccurs="1" maxOccurs="unbounded">
+                            <xs:element name="BasketLine" type="tns:basketLineType" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="labels" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>FUTURE FEATURE!
+Supports labels being affixed to bags. Maximum 2 labels per bag...
+NOT CURRENTLY SUPPORTED. DO NOT USE.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence maxOccurs="unbounded">
+                            <xs:element name="label" type="tns:labelType" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

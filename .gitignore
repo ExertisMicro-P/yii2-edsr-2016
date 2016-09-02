@@ -28,3 +28,7 @@ composer.phar
 phpunit.phar
 # local phpunit config
 /phpunit.xml
+html/index.html
+html/adminer/index.php
+EDSR Database for Noel 2016.sql
+vhost.txt

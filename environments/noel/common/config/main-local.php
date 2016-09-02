@@ -8,8 +8,6 @@ return [
             'dsn'      => 'mysql:host=localhost;dbname=yii2edsr',
             'username' => 'edsr',
             'password' => 'p455w0rd',
-            'username' => 'root',
-            'password' => 'root',
             'charset' => 'utf8',
         ],
 
@@ -18,8 +16,6 @@ return [
                 'dsn'      => 'mysql:host=localhost;dbname=yii2edsrcredit',
             'username' => 'edsr',
             'password' => 'p455w0rd',
-            'username' => 'root',
-            'password' => 'root',
             'charset'  => 'utf8',
         ],
 

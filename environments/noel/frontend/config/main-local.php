@@ -26,9 +26,24 @@ $config = [
                 [
                     'class' => 'yii\log\FileTarget',
                     'levels' => ['error', 'warning' , 'trace'],
+                    'logVars' => [], // RCH 20150624 stop logging all the damn Super Globals! see http://www.yiiframework.com/doc-2.0/guide-runtime-logging.html
+                    'except' => ['yii\db\*'],
                 ],
-            ],
+                'email' => [
+                    'class'   => 'yii\log\EmailTarget',
+                    'levels'  => ['error', 'warning'],
+                    'logVars' => [], // RCH 20150624 stop logging all the damn Super Globals! see http://www.yiiframework.com/doc-2.0/guide-runtime-logging.html
+                    'message' => [
+                        'to' => 'russell.hutson@crewe-it.co.uk',
+                    ],
+                ],
+            ]
         ],
+
+
+
+
+
     ],
     'modules' => [
         'user' => [

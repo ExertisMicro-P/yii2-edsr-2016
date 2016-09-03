@@ -43,6 +43,11 @@ $config = [
 
 
 
+        'session'      => [
+            'name'     => 'ex6HF9li206yq4u9MLjuU3ee',
+            'savePath' => '/var/lib/php/session',
+            'timeout'  => 20 * 60 * 60
+        ],
 
     ],
     'modules' => [

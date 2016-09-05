@@ -40,8 +40,8 @@ class StockItemEmailer {
      */
     public function notifyCustomerofNewStockItems($stockitems, $emailSalesToo=true) {
 
-        \Yii::info (__METHOD__.' $stockitems='.print_r($stockitmes,true));
-        
+        \Yii::info (__METHOD__.' $stockitems='.print_r($stockitems,true));
+
         $stockrooms = array();
 
         foreach ($stockitems as $item) {

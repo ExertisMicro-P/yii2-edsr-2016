@@ -6,92 +6,92 @@ namespace console\controllers;
 use yii\console\Controller;
 
 class ZtormCatalogueController extends Controller {
-    
+
     public $cmd;
-    
-    public function options() {
+
+    public function options($actionID) {
         return ['cmd'];
     }
-    
+
     public function optionAliases(){
         return ['c' => 'cmd'];
     }
-    
+
     public function actionIndex($cmd = ''){
-        
-        
+
+
         switch ($cmd){
             case "fetchProducts":
                 $this->_fetchProducts();
                 break;
-            
+
             case "lastUpdate":
                 $this->_lastUpdate();
                 break;
-            
+
             case "newProducts":
                 $this->_newProducts();
                 break;
-            
+
             case "setDefaultRuleForAccounts":
                 $this->_setDefaultRuleForAccounts();
                 break;
-            
+
             case "help":
                 $this->_showHelp();
                 break;
-            
+
             case "":
                 echo "\nPlease enter a command, for help use 'help'";
                 break;
-            
+
             default:
                 echo "Unknown command.";
         }
-        
+
         echo "\n\n";
-        
+
     }
-    
-    
-    
+
+
+
     private function _showHelp(){
-        
+
         echo "\n\nUsage:\n\n";
-        
+
         echo "To fetch products from Ztorm to EDSR DB: 'php .\yii ztorm-catalogue fetchProducts'\n";
         echo "To check when the products were updated last, use: 'php .\yii ztorm-catalogue lastUpdate'\n";
         echo "To check the new products saved in the DB, use: 'php .\yii ztorm-catalogue newProducts'\n";
         echo "To set the default rule for all the accounts, use: 'php .\yii ztorm-catalogue setDefaultRuleForAccounts'\n\n";
-        
+
     }
-    
-    
+
+
     private function _newProducts(){
-        
+
         $newProducts = \common\models\ZtormCatalogueCache::find()->where(['product_added'=>date('Y-m-d')])->all();
-        
+
         echo "\nProducts has been added today:\n\n";
-            
+
         foreach($newProducts as $newProduct){
-            
+
             echo "#".$newProduct['RealProductId']." ".$newProduct['Name']."\n";
-            
+
         }
-        
+
         echo "\n\nTotal: ".count($newProducts)."\n\n";
-        
+
     }
-    
-    
+
+
     private function _setDefaultRuleForAccounts(){
-        
+
         $allAccounts = \common\models\Account::find()->all();
         $saved = 0;
         $error = 0;
-        
+
         foreach($allAccounts as $acc){
-            
+
             if(\backend\models\AccountRuleMapping::find()->where(['account_id'=>$acc['id']])->exists()){
                 echo "Could not assign ".$acc['customer_exertis_account_number']." to Default rule as it already exists. \n";
                 $error++;
@@ -109,56 +109,56 @@ class ZtormCatalogueController extends Controller {
                     echo "Could not assign ".$acc['customer_exertis_account_number']." to Default rule. \n";
                     $error++;
                 }
-                
+
             }
-            
+
         }
             echo "\n\n" . $saved . " has been saved and ".$error." could not be assigned. \n\n";
-        
+
     }
-    
-    
+
+
     private function _lastUpdate(){
-        
+
         $ztormLastUpdate = \common\models\ZtormCatalogueCache::find()->orderBy(['id'=>SORT_DESC])->one()->lastUpdated;
-        
+
         $dateUpdated = explode(' ', $ztormLastUpdate)[0];
         $timeUpdated = explode(' ', $ztormLastUpdate)[1];
-        
+
         if($dateUpdated == date('Y-m-d')){
             $dateUpdated = 'Today at';
         }
-        
-        
+
+
         echo "\n\n Ztorm Products has been last updated: " . $dateUpdated . ' ' . $timeUpdated . " \n";
-        
+
     }
-    
-    
+
+
     private function _fetchProducts(){
-        
+
         $store = \common\models\ZtormAccess::findOne(['type'=>'LIVE', 'storealias'=>'EDSR']);
-        
+
         $itemPurchaser = new \console\components\ItemPurchaser();
         $itemPurchaser->setStoreDetails($store);
-        
+
         $products = $itemPurchaser->getZtormRawCatalogue();
-        
+
         //var_dump($products); die();
-        
+
         $savedSuccessfully = 0;
         $updatedSuccessfully = 0;
         $SavedError = 0;
         $sshots = [];
         $genres = [];
-        
-        
+
+
         foreach($products as $product){
-            
+
             //var_dump($product); die();
-            
+
             $findProduct = \common\models\ZtormCatalogueCache::find()->where(['ZId' => $product->Id])->one();
-                     
+
             if(!$findProduct){
 
                 $ZtormCatalogueCache = new \common\models\ZtormCatalogueCache();
@@ -260,9 +260,9 @@ class ZtormCatalogueController extends Controller {
                     $msg = $this->ansiFormat($product->Name . ' (#'.$product->RealProductId.') error while saving.', \yii\helpers\Console::FG_RED);
                     $SavedError++;
                 }
-                
+
             } else {
-                
+
                 $findProduct->size = $product->Size;
                 $findProduct->status = $product->Status;
                 $findProduct->supplier = $product->Supplier;
@@ -351,7 +351,7 @@ class ZtormCatalogueController extends Controller {
                 $findProduct->Boxshot = (is_array($product->Boxshot->URL))? implode('^^', $product->Boxshot->URL) : $product->Boxshot->URL;
                 $findProduct->Genres = (is_array($product->Genres->Genre->Name_EN))? implode('^^', $product->Genres->Genre->Name_EN) : $product->Genres->Genre->Name_EN;
                 $findProduct->Screenshots = (is_array($product->Screenshots->URL))? implode('^^', $product->Screenshots->URL) : $product->Screenshots->URL;
-                
+
 
                 if($findProduct->save()){
                     $msg = $this->ansiFormat($product->Name . ' (#'.$product->RealProductId.') updated successfully.', \yii\helpers\Console::FG_GREEN);
@@ -360,18 +360,18 @@ class ZtormCatalogueController extends Controller {
                     $msg = $this->ansiFormat($product->Name . ' (#'.$product->RealProductId.') error while updating.', \yii\helpers\Console::FG_RED);
                     $SavedError++;
                 }
-                
-                
+
+
             }
-            
+
             echo $msg . "\n";
-            
-                    
+
+
         }
-        
+
         echo "\n\nProduct caching is done. \n----------------------------\nNew Products: " . $savedSuccessfully . "\nUpdated Products: " . $updatedSuccessfully . "\nErrors: " . $SavedError . "\n----------------------------\n\n";
-        
+
     }
-    
-    
+
+
 }

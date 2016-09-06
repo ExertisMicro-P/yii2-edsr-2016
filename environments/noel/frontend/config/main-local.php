@@ -21,25 +21,25 @@ $config = [
         ],
 
         'log' => [
-            'traceLevel' => YII_DEBUG ? 3 : 0,
             'targets' => [
-                [
+                'file' => [
                     'class' => 'yii\log\FileTarget',
-                    'levels' => ['error', 'warning' , 'trace'],
+                    'levels' => ['trace', 'info', 'error'],
+                    //'categories' => ['order'],
+                    'logFile' => '@console/runtime/logs/app.log',
                     'logVars' => [], // RCH 20150624 stop logging all the damn Super Globals! see http://www.yiiframework.com/doc-2.0/guide-runtime-logging.html
                     'except' => ['yii\db\*'],
                 ],
                 'email' => [
-                    'class'   => 'yii\log\EmailTarget',
-                    'levels'  => ['error', 'warning'],
+                    'class' => 'yii\log\EmailTarget',
+                    'levels' => ['error', 'warning'],
                     'logVars' => [], // RCH 20150624 stop logging all the damn Super Globals! see http://www.yiiframework.com/doc-2.0/guide-runtime-logging.html
                     'message' => [
-                        'to' => 'russell.hutson@crewe-it.co.uk',
+                        'to' => ['edsr@crewe-it.co.uk'],
                     ],
                 ],
-            ]
+            ],
         ],
-
 
 
 

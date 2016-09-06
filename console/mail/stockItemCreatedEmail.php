@@ -13,6 +13,9 @@ use common\models\Account;
  * data =  pos => [po =>[ orderdetails[ ]product[] item[]]]
  *
  */
+
+$data = $selectedDetails ;
+
 ?>
 
 <style>body {background-color:#f2f2f2;} body * {font-family: verdana;font-size: 8pt;} .email-body {width: 100%;padding: 0;margin:0;text-align:center;background-color:#f2f2f2;font-family: verdana;}.email-body th {font-family: verdana;font-size: 8pt;}.email-body td {font-family: verdana;font-size: 8pt;}.email-body h2 {font-family: verdana;font-size: 8pt;}.email-body h3 {font-family: verdana;font-size: 8pt;}.email-body h4 {font-family: verdana;font-size: 8pt;}.email-header {width:650px;height:132px;}.email-border {width:20px;}.email-content {font-family: verdana;padding: 20px;background-color:#ffffff;text-align: left;}.email-pre-footer {width:650px;height:18pt;}.email-footer {width: 650px;height:24px;}
@@ -42,7 +45,7 @@ use common\models\Account;
                 <h3><?= $account->customer_exertis_account_number ?></h3>
                 <p><?= $account->findMainUser()->email ?></p>
 
-                <p><?=count($dataitem)?> New keys are now available in your <?= Html::a('Exertis Digital Stock Room', 'https://stockroom.exertis.co.uk') ?>.</p>
+                <p>< ?=count($dataitem)?> New keys are now available in your <?= Html::a('Exertis Digital Stock Room', 'https://stockroom.exertis.co.uk') ?>.</p>
                 <p>Please visit <?= Html::a('our Help Page', 'https://stockroom.exertis.co.uk/site/help') ?> for FAQs, Support Contacts and Download Links</p>
             </td>
         </tr>

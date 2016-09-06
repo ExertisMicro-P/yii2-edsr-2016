@@ -287,12 +287,13 @@ class Account extends \yii\db\ActiveRecord {
 
         if ($account->include_key_in_email) {
 
+//            $result = $this->sendEmailWithoutKeys($data) ;            // The orignal code, all keys in one email
             $result = $this->sendEmailPerPO($data);
 
             $this->generateCSVfile($data);
 
         } else {
-            $this->sendEmailWithoutKeys($data);
+            $result = $this->sendEmailWithoutKeys($data);
         }
 
         return $result;

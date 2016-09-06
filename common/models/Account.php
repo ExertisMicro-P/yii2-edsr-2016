@@ -287,7 +287,7 @@ class Account extends \yii\db\ActiveRecord {
 
         if ($account->include_key_in_email) {
 
-//            $result = $this->sendEmailWithoutKeys($data) ;            // The orignal code, all keys in one email
+//            $result = $this->sendEmailWithAllKeys($data) ;            // The orignal code, all keys in one email
             $result = $this->sendEmailPerPO($data);
 
             $this->generateCSVfile($data);
@@ -319,7 +319,7 @@ class Account extends \yii\db\ActiveRecord {
 
         $this->generateCSVfile($selectedDetails);
 
-        if (!$this->sendEmail($mailer, $csvFilename)) {
+        if (!$this->sendEmail($mailer, $selectedDetails, $csvFilename)) {
             $result = false;
         }
 

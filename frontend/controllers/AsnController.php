@@ -86,6 +86,20 @@ class AsnController extends ActiveController {
         
         return $user;
         
+    /**
+     * SAVE DROP SHIP EMAIL
+     * ====================
+     * This is intended to be called from the EDI system to record the drop
+     * ship email address for the passed purchase order and, if the order has
+     * been processed, send the key via email to the purchaser.
+     *
+     * @param $accountNo
+     * @param $custPo
+     * @param $emailAddress
+     */
+    public function actionSaveDropShipEmail($accountNo=null, $custPo=null, $emailAddress=null ){
+        die('sde ' . time());
+    }
     }
     
     /**

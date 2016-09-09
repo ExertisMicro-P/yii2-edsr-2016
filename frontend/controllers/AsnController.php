@@ -36,6 +36,20 @@ class AsnController extends ActiveController {
         return $before;
     }
     
+    /**
+     * ACTIONS
+     * =======
+     * Remove the index option to prevent a called obtaining a list of all products
+     *
+     * @return array
+     */
+    public function actions() {
+        $actionList = parent::actions() ;
+
+        unset($actionList['index']) ;
+
+        return $actionList ;
+    }
     public function behaviors() {
         $behaviors = parent::behaviors();
         $behaviors['authenticator'] = [

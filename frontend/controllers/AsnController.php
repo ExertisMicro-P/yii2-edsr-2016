@@ -10,8 +10,8 @@ use common\models\gauth\GAUser;
 
 class AsnController extends ActiveController {
     
-//  public $modelClass = 'api\common\models\StockItem';
-    public $modelClass = 'api\modules\v1\models\StockItem';
+  public $modelClass = '\common\models\StockItem';
+//    public $modelClass = 'api\modules\v1\models\StockItem';
  
     public function init() {
         parent::init();

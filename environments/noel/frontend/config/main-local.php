@@ -24,11 +24,11 @@ $config = [
             'targets' => [
                 'file' => [
                     'class' => 'yii\log\FileTarget',
-                    'levels' => ['trace', 'info', 'error'],
+                    'levels' => ['trace', 'info', 'error', 'profile'],
                     //'categories' => ['order'],
-                    'logFile' => '@console/runtime/logs/app.log',
+                    'logFile' => '@console/runtime/logs/app-nw.log',
                     'logVars' => [], // RCH 20150624 stop logging all the damn Super Globals! see http://www.yiiframework.com/doc-2.0/guide-runtime-logging.html
-                    'except' => ['yii\db\*'],
+//                    'except' => ['yii\db\*'],
                 ],
                 'email' => [
                     'class' => 'yii\log\EmailTarget',

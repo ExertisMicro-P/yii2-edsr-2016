@@ -50,7 +50,7 @@ class AsnController extends ActiveController {
     /**
      * ACTIONS
      * =======
-     * Remove the index option to prevent a called obtaining a list of all products
+     * Remove the index option to prevent a caller obtaining a list of all products
      *
      * @return array
      */

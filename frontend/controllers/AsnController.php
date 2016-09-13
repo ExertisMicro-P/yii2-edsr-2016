@@ -125,12 +125,16 @@ class AsnController extends ActiveController {
      * @param null $accountNo
      * @param null $po
      * @param null $emailAddress
+     * @param null $brand
      *
      * @return array
      */
-    public function actionSaveDropShipEmail($accountNo = null, $po = null, $email = null) {
+    public function actionSaveDropShipEmail($accountNo = null, $po = null, $email = null, $brand = null) {
 
         $responseCode = 400;
+
+        $purchaseOrder = trim($po) ;
+        $brand = trim($brand) ;
 
         if (($result = $this->verifySDEParametersProvided($accountNo, $po, $email)) === true) {
 
@@ -142,7 +146,7 @@ class AsnController extends ActiveController {
                 $result = $this->verifyPO($account, $po);
 
                 if ($result === true) {
-                    if (($result = $this->recordDropShipEmail($account, $accountNo, $po, $email)) === true) {
+                    if (($result = $this->recordDropShipEmail($account, $accountNo, $po, $email, $brand)) === true) {
                         $responseCode = 200;
                         $result       = 'success';
                     }
@@ -163,17 +167,22 @@ class AsnController extends ActiveController {
      * @param $accountNo
      * @param $purchaseOrder
      * @param $emailAddress
+     * @param $brand
      *
      * @return bool|string
      */
-    private function recordDropShipEmail($account, $accountNo, $purchaseOrder, $emailAddress) {
+    private function recordDropShipEmail($account, $accountNo, $purchaseOrder, $emailAddress, $brand) {
 
-        if (($result = $this->checkIfDuplicate($account, $accountNo, $purchaseOrder, $emailAddress)) === false) {
+        if (($result = $this->checkIfDuplicate($account, $accountNo, $purchaseOrder, $emailAddress, $brand)) === false) {
             $dse                  = new DropshipEmailDetails();
             $dse->account_id      = $account->id;
             $dse->account_no      = $accountNo;
             $dse->po              = $purchaseOrder;
             $dse->email           = $emailAddress;
+
+            if ($brand && strlen($brand)) {
+                $dse->brand = $brand ;
+            }
 
             try {
                 if ($dse->save()) {
@@ -210,17 +219,22 @@ class AsnController extends ActiveController {
      * @param $accountNo
      * @param $purchaseOrder
      * @param $emailAddress
+     * @param $brand
      *
      * @return bool|string
      */
-    private function checkIfDuplicate($account, $accountNo, $purchaseOrder, $emailAddress) {
+    private function checkIfDuplicate($account, $accountNo, $purchaseOrder, $emailAddress, $brand) {
         $dse = DropshipEmailDetails::find()
                                    ->where(['account_id' => $account->id])
                                    ->andWhere(['po' => $purchaseOrder])
-                                   ->andWhere(['email' => $emailAddress])
-                                   ->count();
+                                   ->andWhere(['email' => $emailAddress]) ;
+        if ($brand && strlen($brand)) {
+            $dse->andWhere(['brand' => $brand]) ;
+        } else {
+            $dse->andWhere(['brand' => null]) ;
+        }
 
-        return $dse == 0 ? false : 'Duplicate Request';
+        return $dse->count() == 0 ? false : 'Duplicate Request';
     }
 
 

@@ -319,7 +319,7 @@ class AsnController extends ActiveController {
         set_time_limit(120);
         $result = [];
         $errors = 0;
-        die('q');
+
         // RCH 20160818
         // support a list of POs
         $poAry = explode(',', $custPo);

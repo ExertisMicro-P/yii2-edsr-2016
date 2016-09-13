@@ -5,7 +5,6 @@ namespace frontend\controllers;
 use common\models\DropshipEmailDetails;
 use yii\rest\ActiveController;
 use common\models\Account;
-use common\models\Orderdetails;
 use yii\web\Response;
 use Yii;
 use common\models\gauth\GAUser;
@@ -131,7 +130,7 @@ class AsnController extends ActiveController {
      */
     public function actionSaveDropShipEmail($accountNo = null, $po = null, $email = null) {
 
-        $responseCode = 400 ;
+        $responseCode = 400;
 
         if (($result = $this->verifySDEParametersProvided($accountNo, $po, $email)) === true) {
 
@@ -142,19 +141,18 @@ class AsnController extends ActiveController {
 
                 $result = $this->verifyPO($account, $po);
 
-                if (is_object($result)) {
-                    $order = $result;
-
-                    if (($result = $this->recordDropShipEmail($account, $order, $accountNo, $po, $email)) !== false) {
-                        $responseCode = 200 ;
-                        $result = 'success' ;
+                if ($result === true) {
+                    if (($result = $this->recordDropShipEmail($account, $accountNo, $po, $email)) === true) {
+                        $responseCode = 200;
+                        $result       = 'success';
                     }
                 }
             }
         }
-        Yii::$app->response->format = 'json';
-        Yii::$app->response->statusCode= $responseCode ;
-        return ['message' => $result] ;
+        Yii::$app->response->format     = 'json';
+        Yii::$app->response->statusCode = $responseCode;
+
+        return ['message' => $result];
     }
 
     /**
@@ -162,32 +160,30 @@ class AsnController extends ActiveController {
      * =====================
      *
      * @param $account
-     * @param $order
      * @param $accountNo
      * @param $purchaseOrder
      * @param $emailAddress
      *
      * @return bool|string
      */
-    private function recordDropShipEmail($account, $order, $accountNo, $purchaseOrder, $emailAddress) {
+    private function recordDropShipEmail($account, $accountNo, $purchaseOrder, $emailAddress) {
 
-        if (($result = $this->checkIfDuplicate($account, $order, $accountNo, $purchaseOrder, $emailAddress)) === false) {
-            $dse = new DropshipEmailDetails() ;
-            $dse->account_id =$account->id ;
-            $dse->orderdetails_id = $order->id ;
-            $dse->account_no = $accountNo ;
-            $dse->po = $purchaseOrder ;
-            $dse->email = $emailAddress ;
+        if (($result = $this->checkIfDuplicate($account, $accountNo, $purchaseOrder, $emailAddress)) === false) {
+            $dse                  = new DropshipEmailDetails();
+            $dse->account_id      = $account->id;
+            $dse->account_no      = $accountNo;
+            $dse->po              = $purchaseOrder;
+            $dse->email           = $emailAddress;
 
             try {
                 if ($dse->save()) {
-                    $result = true ;
+                    $result = true;
 
                 } elseif (array_key_exists('email', $dse->errors)) {
-                        $result = 'Malformed parameter values' ;
+                    $result = 'Malformed parameter values';
 
                 } else {
-                    $result = 'Malformed parameter values' ;
+                    $result = 'Malformed parameter values';
                 }
 
             } catch (\yii\db\Exception $exc) {
@@ -195,7 +191,7 @@ class AsnController extends ActiveController {
                 // PDO duplicate record error. Could do with a constant
                 // -------------------------------------------------------
                 if ($exc->errorInfo[1] == 1062) {
-                    $result = 'Duplicate Request' ;
+                    $result = 'Duplicate Request';
 
                 } else {
                     $result = $exc->message();
@@ -203,7 +199,7 @@ class AsnController extends ActiveController {
             }
         }
 
-        return $result ;
+        return $result;
     }
 
     /**
@@ -211,20 +207,20 @@ class AsnController extends ActiveController {
      * ==================
      *
      * @param $account
-     * @param $order
      * @param $accountNo
      * @param $purchaseOrder
      * @param $emailAddress
      *
      * @return bool|string
      */
-    private function checkIfDuplicate($account, $order, $accountNo, $purchaseOrder, $emailAddress) {
+    private function checkIfDuplicate($account, $accountNo, $purchaseOrder, $emailAddress) {
         $dse = DropshipEmailDetails::find()
                                    ->where(['account_id' => $account->id])
-                                   ->where(['orderdetails_id' => $order->id])
-                                   ->where(['email' => $emailAddress])
+                                   ->andWhere(['po' => $purchaseOrder])
+                                   ->andWhere(['email' => $emailAddress])
                                    ->count();
-        return $dse == 0 ? false : 'Duplicate Request' ;
+
+        return $dse == 0 ? false : 'Duplicate Request';
     }
 
 
@@ -251,7 +247,7 @@ class AsnController extends ActiveController {
             $result = 'Missing Parameter';
 
         } elseif (!$emailAddress) {
-            $result = 'Missing Parameter' ;
+            $result = 'Missing Parameter';
         }
 
         return $result;
@@ -280,26 +276,19 @@ class AsnController extends ActiveController {
     /**
      * VERIFY PO
      * =========
+     * Simply checks that the purchase order was non-blank
      *
+     * @param $account
      * @param $purchaseOrder
      *
-     * @return array|null|\yii\db\ActiveRecord
+     * @return bool|string
      */
     private function verifyPO($account, $purchaseOrder) {
-        $order = Orderdetails::find()
-                             ->with(['stockitem'])
-                             ->where(['po' => $purchaseOrder])->one();
-        if (!$order) {
-            $order = 'Incorrect PO Number';
-        } else {
-            if (!isset($order->stockitem->stockroom) ||
-                !isset($order->stockitem->stockroom->account) ||
-                $order->stockitem->stockroom->account->id != $account->id
-            ) {
-                $order = 'Incorrect PO Number and Account';
-            }
+        if (strlen(trim($purchaseOrder)) > 0) {
+            return true;
         }
-        return $order;
+
+        return 'Incorrect PO Number';
     }
 
 

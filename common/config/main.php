@@ -26,6 +26,18 @@ return [
             'datetimeFormat' => 'Y-m-d H:i:s',
             'timeFormat' => 'H:i:s',
         ],
+
+        'i18n'         => [
+            'translations' => [
+                'user' => [
+                    'class'    => 'yii\i18n\PhpMessageSource',
+                    'basePath' => 'amnah\yii2\user\messages\uk\user.php', // example: @app/messages/fr/user.php
+                ]
+            ],
+        ],
+
+
+
         'view' => [
             'theme' => [
                 'pathMap' => [

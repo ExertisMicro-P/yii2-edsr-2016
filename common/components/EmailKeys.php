@@ -407,8 +407,10 @@ class EmailKeys {
                                     compact("subject", "recipientDetails", "selectedDetails", "account"))
                           ->setTo([$recipientDetails['email'] => $recipientDetails['recipient']])
                           ->setBcc(Yii::$app->params['account.copyAllEmailsTo'])// RCH 20150420
-                          ->setSubject($subject);
-//                          ->attach($filename);
+                          ->setSubject($subject) ;
+
+
+        $this->attachKeyPdfs($message, $selectedDetails) ;
 
         // check for messageConfig before sending (for backwards-compatible purposes)
         if (empty($mailer->messageConfig["from"])) {
@@ -416,22 +418,39 @@ class EmailKeys {
         }
         $result = $message->send();
 
+
         // restore view path and return result
         $mailer->viewPath = $oldViewPath;
 
         return $result;
     }
 
+    private function attachKeyPdfs($message, $selectedDetails) {
+        $filename = $this->produceKeyPdf($selectedDetails) ;
 
+        $message->attach($filename);
 
+//        unlink($filename) ;
 
+    }
+
+    private function produceKeyPdf($selectedDetails) {
+
+        $filename = tempnam(Yii::getAlias('@frontend') . '/runtime/tmp', 'key') ;
+
+        $stockCodes = [] ;
+        foreach ($selectedDetails as $selectedItem) {
+            foreach ($selectedItem as $code => $details) {
+                foreach ($details['keyItems'] as $stockCode => $key) {
+                    $stockCodes[] = $stockCode ;
+                }
+            }
         }
 
+        $keyPrinter = new printKeys() ;
+        $keyPrinter->printKeys($stockCodes, $filename) ;
 
-
-            }
-            }
-        }
+        return $filename ;
     }
 
 }

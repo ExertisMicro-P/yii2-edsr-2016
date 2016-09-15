@@ -8,64 +8,69 @@ use yii\db\Expression;
 /**
  * This is the model class for EDSR models.
  *
- * @property string $created_at
- * @property string $updated_at
+ * @property string         $created_at
+ * @property string         $updated_at
  *
  * @property DigitalProduct $digitalProduct
  */
-class BaseModel extends \yii\db\ActiveRecord
-{
+class BaseModel extends \yii\db\ActiveRecord {
 
     /**
      * @inheritdoc
      */
-    public function behaviors()
-    {
-        return [
-            'timestamp' => [
+    public function behaviors() {
+        $behaviours = [
+            'timestamp'          => [
                 'class'      => 'yii\behaviors\TimestampBehavior',
-//                'value'      => function () {
-//                    return date("Y-m-d H:i:s");
-//                },
-                'value' => new Expression('NOW()'),
+                //                'value'      => function () {
+                //                    return date("Y-m-d H:i:s");
+                //                },
+                'value'      => new Expression('NOW()'),
                 'attributes' => [
                     \yii\db\ActiveRecord::EVENT_BEFORE_INSERT => 'created_at',
                     \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => 'updated_at',
                 ],
 
             ],
-            'blameable' => [
-                'class' => 'yii\behaviors\BlameableBehavior',
+            'blameable'          => [
+                'class'              => 'yii\behaviors\BlameableBehavior',
                 'createdByAttribute' => 'created_by',
                 'updatedByAttribute' => 'updated_by',
             ],
             'savewithaudittrail' =>
                 [
-                    'class' => SaveWithAuditTrailBehavior::className(),
+                    'class'     => SaveWithAuditTrailBehavior::className(),
                     'userClass' => '\common\models\gauth\GAUser',
                 ]
 
         ];
+        if (Yii::$app instanceof \yii\console\Application) {
+            unset($behaviours['blameable']);
+            unset($behaviours['savewithaudittrail']);
+        }
+
+        return $behaviours;
     }
 
-    public function getCreated()
-    {
+    public function getCreated() {
         if ($this->created_at) {
-            $when = strtotime($this->created_at) ;
-            return date('d-m-Y H:i:s', $when) ;
+            $when = strtotime($this->created_at);
+
+            return date('d-m-Y H:i:s', $when);
         }
-        return null ;
+
+        return null;
     }
 
-    public function getUpdated()
-    {
+    public function getUpdated() {
         if ($this->updated_at) {
-            $when = strtotime($this->updated_at) ;
-            return date('d-m-Y H:i:s', $when) ;
-        }
-        return null ;
-    }
+            $when = strtotime($this->updated_at);
 
+            return date('d-m-Y H:i:s', $when);
+        }
+
+        return null;
+    }
 
 
 }

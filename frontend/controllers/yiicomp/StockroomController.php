@@ -8,6 +8,7 @@
 
 namespace frontend\controllers\yiicomp;
 
+use common\components\EmailKeys;
 use common\models\DigitalProduct;
 use common\models\EmailedItem;
 use common\models\EmailedUser;
@@ -27,8 +28,7 @@ use common\models\StockActivity;
 
 use common\models\Account;
 
-class StockroomController extends \frontend\controllers\EdsrController
-{
+class StockroomController extends \frontend\controllers\EdsrController {
 
     const MAX_LIFE_IN_MINUTES = 20015;          // 15 minutes before a session order times out
 
@@ -36,15 +36,14 @@ class StockroomController extends \frontend\controllers\EdsrController
     /**
      * @inheritdoc
      */
-    public function behaviors()
-    {
+    public function behaviors() {
         return [
             'access' => [
                 'class' => AccessControl::className(),
                 'rules' => [
                     [
                         'actions' => ['stockroom', 'header', 'selected', 'emailkeys', 'markkeysdelivered', 'viewkeys',
-                            'revieworders', 'orders', 'fetchkeys', 'reemailkey', 'checkselected', 'countdelivery', 'getkeylimit'],
+                                      'revieworders', 'orders', 'fetchkeys', 'reemailkey', 'checkselected', 'countdelivery', 'getkeylimit'],
                         'allow'   => true,
                         'roles'   => ['@'],
                     ],
@@ -60,8 +59,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return string
      */
-    public function actionHeader()
-    {
+    public function actionHeader() {
         $result = $this->getUserDetails();
         if ($result !== true) {
 
@@ -85,8 +83,7 @@ class StockroomController extends \frontend\controllers\EdsrController
     }
 
 
-    public function actionOrders()
-    {
+    public function actionOrders() {
 
     }
 
@@ -98,8 +95,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return string
      */
-    public function actionSelected()
-    {
+    public function actionSelected() {
         if ($this->clearOldSelectedItems() !== false) {
 
             $formatType = Yii::$app->request->get('t');
@@ -121,23 +117,21 @@ class StockroomController extends \frontend\controllers\EdsrController
 
         ]);
     }
-    
-    
-    
-    
-    public function actionGetkeylimit(){
-        
-        return (int) \common\models\Account::findOne(['id' => Yii::$app->user->identity->account_id])->key_limit;
-        
+
+
+    public function actionGetkeylimit() {
+
+        return (int)\common\models\Account::findOne(['id' => Yii::$app->user->identity->account_id])->key_limit;
+
     }
-    
-    
-    public function actionCountdelivery(){
-        
-        return (int) SessionDelivering::find()->where(['account_id' => Yii::$app->user->identity->account_id, 'session_id' => session_id()])->sum('quantity');
-        
+
+
+    public function actionCountdelivery() {
+
+        return (int)SessionDelivering::find()->where(['account_id' => Yii::$app->user->identity->account_id, 'session_id' => session_id()])->sum('quantity');
+
     }
-    
+
 
     /**
      * CHECK SELECTED
@@ -146,9 +140,8 @@ class StockroomController extends \frontend\controllers\EdsrController
      * delivery (by both the current user and others) or to save changes to
      * the list.
      */
-    public function actionCheckselected()
-    {
-        $response = [];        
+    public function actionCheckselected() {
+        $response = [];
         if ($this->clearOldSelectedItems() !== false) {
             if (Yii::$app->request->isPost) {
                 $response                     = $this->saveFlaggedForDelivery();
@@ -172,8 +165,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      * This handles updating the list of products the current user wants to
      * deliver, detecting any which are already allocated to another user.
      */
-    private function saveFlaggedForDelivery()
-    {
+    private function saveFlaggedForDelivery() {
         $response = ['status' => true, 'allocatedAlready' => [], 'errors' => []];
 
         // ---------------------------------------------------------------
@@ -206,12 +198,11 @@ class StockroomController extends \frontend\controllers\EdsrController
             $sOrder->quantity    = $item->quantity;
             $sOrder->po          = $item->po;
 
-            
 
             $keyLimit = $this->actionGetkeylimit();
             $delivery = $this->actionCountdelivery();
-            
-            if($delivery < $keyLimit){
+
+            if ($delivery < $keyLimit) {
 
                 try {
                     $sOrder->save();
@@ -240,12 +231,11 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return mixed
      */
-    private function getAllocatedItems($currentUsersItems = false)
-    {
+    private function getAllocatedItems($currentUsersItems = false) {
         $sessionItems = SessionDelivering::find()
-            ->where([($currentUsersItems ? 'and' : 'not'), ['created_by' => $this->user->id]])
-            ->orderBy('stockitem_id')
-            ->all();
+                                         ->where([($currentUsersItems ? 'and' : 'not'), ['created_by' => $this->user->id]])
+                                         ->orderBy('stockitem_id')
+                                         ->all();
         $items        = [];
         foreach ($sessionItems as $item) {
             $items['keys'][]  = $item->stockitem_id;
@@ -268,15 +258,14 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @throws \Exception
      */
-    private function removeDeletedOrPreviouslySelectedItem(&$products)
-    {
+    private function removeDeletedOrPreviouslySelectedItem(&$products) {
         // ---------------------------------------------------------------
         // First read any existing records for the current session
         // ---------------------------------------------------------------
         $sessionItems = SessionDelivering::find()
-            ->where(['created_by' => $this->user->id])
-            ->orderBy('stockitem_id')
-            ->all();
+                                         ->where(['created_by' => $this->user->id])
+                                         ->orderBy('stockitem_id')
+                                         ->all();
 
         // ---------------------------------------------------------------
         // Iterate over the existing records and narrow the selections
@@ -312,8 +301,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return string
      */
-    private function showSelectedProducts()
-    {
+    private function showSelectedProducts() {
         Yii::$app->response->format = 'raw';
         header('Content-Type: application/javascript');
 
@@ -329,8 +317,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      * Use this to return the html, plus custom tags, for the overall
      * client view
      */
-    public function actionStockroom()
-    {
+    public function actionStockroom() {
 
         $result = $this->getUserDetails();
         if ($result !== false) {
@@ -360,8 +347,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return string
      */
-    private function getStockroomNames()
-    {
+    private function getStockroomNames() {
         $params = [
             'StockroomSearch' => [
                 'account_id' => $this->user->account_id,
@@ -376,16 +362,16 @@ class StockroomController extends \frontend\controllers\EdsrController
         if (is_array($userInputs)) {
             $params = array_merge($userInputs, $params);
         }
-        
-        $cLevel = new \common\components\CreditLevel($this->user) ;
+
+        $cLevel = new \common\components\CreditLevel($this->user);
 
         // -------------------------------------------------------------------
         //
         // -------------------------------------------------------------------
         return $this->render('header-html', [
-              'credit' => $cLevel->readCurrentCredit(),
-//            'dataProvider' => $dataProvider,
-//            'searchModel' => $searchModel,
+            'credit' => $cLevel->readCurrentCredit(),
+            //            'dataProvider' => $dataProvider,
+            //            'searchModel' => $searchModel,
         ]);
 
     }
@@ -394,60 +380,61 @@ class StockroomController extends \frontend\controllers\EdsrController
      * EMAIL KEYS
      * ==========
      */
-    public function actionEmailkeys()
-    {
-        
+    public function actionEmailkeys() {
+
         \Yii::info(__METHOD__);
 
-        
+
         $status = 200;
         $errors = [];
 
         $result = $this->getUserDetails();
-        \Yii::info(__METHOD__.':'.__LINE__);
+        \Yii::info(__METHOD__ . ':' . __LINE__);
 
         if (($user = $this->getUserDetails()) === false) {
-            \Yii::info(__METHOD__.':'.__LINE__);
+            \Yii::info(__METHOD__ . ':' . __LINE__);
             $status   = 401;
             $response = 'Forbidden';
 
         } else {
-            \Yii::info(__METHOD__.':'.__LINE__);
+            \Yii::info(__METHOD__ . ':' . __LINE__);
             $recipientDetails = $this->getAndValidateRecipientDetails(); // RCH 20160324 under investigation
             /**
              * @var array $selectedItems Array of Stockroom IDs select for email delivery
              */
-            $selectedItems    = $this->getValidStockItems($user);
-            
-            // RCH 20160125
-            // Grab the company logo for this account
-            $account = \common\models\Account::find()->where(['id'=>$this->user->account_id])->one();
-            
+            $selectedItems = $this->getValidStockItems($user);
+
 
             StockActivity::log('Emailing keys for ' . count($selectedItems) . ' products', $this->stockroomId,
-                null, $recipientDetails['orderNumber'],
-                EmailedItem::tableName(), null,
-                $recipientDetails['recipient'], $recipientDetails['email']
+                               null, $recipientDetails['orderNumber'],
+                               EmailedItem::tableName(), null,
+                               $recipientDetails['recipient'], $recipientDetails['email']
             );
 
             if (count($recipientDetails['errors']) > 0 ||
                 count($selectedItems) == 0
             ) {
-                \Yii::info(__METHOD__.':'.__LINE__);
+                \Yii::info(__METHOD__ . ':' . __LINE__);
 
                 StockActivity::log('Emailing failed due to insufficient available stock', $this->stockroomId);
-                $errors ['insufficient'] = count($selectedItems) == 0 ;
-                $errors['recipient']     = $recipientDetails['errors'] ;
+                $errors ['insufficient'] = count($selectedItems) == 0;
+                $errors['recipient']     = $recipientDetails['errors'];
 
                 StockActivity::log('Unable to email as not enough stock available', $this->stockroomId);
 
             } else {
-                \Yii::info(__METHOD__.':'.__LINE__);
-                $errors = $this->completeEmailOrder($recipientDetails, $selectedItems, $account);
+                \Yii::info(__METHOD__ . ':' . __LINE__);
+                $emailer = new EmailKeys();
+
+                // RCH 20160125
+                // Grab the company logo for this account
+                $account = \common\models\Account::find()->where(['id' => $this->user->account_id])->one();
+
+                $errors = $emailer->completeEmailOrder($recipientDetails, $selectedItems, $account);
             }
 
             if ($errors !== true && count($errors)) {
-                \Yii::info(__METHOD__.':'.print_r($errors,true));
+                \Yii::info(__METHOD__ . ':' . print_r($errors, true));
 
                 $result = $errors;
                 $status = 409;             // Conflict
@@ -456,8 +443,8 @@ class StockroomController extends \frontend\controllers\EdsrController
                 $result = 'ok';
             }
         }
-        \Yii::info(__METHOD__.':'.__LINE__);
-        
+        \Yii::info(__METHOD__ . ':' . __LINE__);
+
         Yii::$app->response->format = 'json';
         Yii::$app->response->setStatusCode($status);
 
@@ -473,8 +460,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      * @return string
      * @throws
      */
-    public function actionMarkkeysdelivered()
-    {
+    public function actionMarkkeysdelivered() {
         $status = 200;
         $errors = [];
 
@@ -487,8 +473,8 @@ class StockroomController extends \frontend\controllers\EdsrController
             $selectedItems    = $this->getValidStockItems($user);
 
             StockActivity::log('Flagging keys delivered for ' . count($selectedItems) . ' products', $this->stockroomId,
-                null, $recipientDetails['orderNumber'],
-                EmailedItem::tableName(), null
+                               null, $recipientDetails['orderNumber'],
+                               EmailedItem::tableName(), null
             );
 
             if (count($recipientDetails['errors']) > 0) {
@@ -505,8 +491,10 @@ class StockroomController extends \frontend\controllers\EdsrController
                 $status   = 404;
 
             } else {
-                list($result, $selectedDetails) = $this->saveEmailedOrderDetails($recipientDetails, $selectedItems) ;
-                if ($result === true) {
+                $account = \common\models\Account::find()->where(['id' => $this->user->account_id])->one();
+                $emailer = new EmailKeys();
+
+                if ($emailer->markKeysDelivered($recipientDetails, $selectedItems, $account)) {
                     $response = 'ok';
                 } else {
                     $status = 404;
@@ -526,10 +514,9 @@ class StockroomController extends \frontend\controllers\EdsrController
      * ============
      *
      */
-    public function actionReemailkey()
-    {
+    public function actionReemailkey() {
         \Yii::info(__METHOD__);
-                
+
         $status = 200;
         $errors = [];
 
@@ -539,16 +526,16 @@ class StockroomController extends \frontend\controllers\EdsrController
 
             $emailedItem = EmailedItem::find()->where(['id' => Yii::$app->request->post('eitem', 0)])->one();
             $stockItem   = $emailedItem->stockItem;
-            
-            \Yii::info(__METHOD__.': Emailling Stockitem '.$stockItem->id);
+
+            \Yii::info(__METHOD__ . ': Emailling Stockitem ' . $stockItem->id);
 
             $pCodes[$stockItem->productcode] = ['quantity' => 1, 'description' => '', 'items' => []];
             $selectedCounts                  = ['codes' => $pCodes, 'errors' => null];
 
             StockActivity::log('Re-emailing key for product', $this->stockroomId,
-                null, $recipientDetails['orderNumber'],
-                EmailedItem::tableName(), null,
-                $recipientDetails['recipient'], $recipientDetails['email']
+                               null, $recipientDetails['orderNumber'],
+                               EmailedItem::tableName(), null,
+                               $recipientDetails['recipient'], $recipientDetails['email']
             );
 
             $productKey = DigitalPurchaser::getProductInstallKey($stockItem);
@@ -557,13 +544,20 @@ class StockroomController extends \frontend\controllers\EdsrController
                 'description' => $stockItem->description,
                 'faqs'        => $stockItem->digitalProduct->faqs,
                 'items'       => [$stockItem->id],
-                'downloadUrl'       => [$stockItem->downloadURL],
+                'downloadUrl' => [$stockItem->downloadURL],
                 'keyItems'    => [$stockItem->id => $productKey]
             ];
 //            $selectedCounts['codes'][$stockItem['productcode']]['items'][]     = $productKey;
-            
+
+
             $recipientDetails[] = ['stockItemId' => $stockItem->id];
-            $result = $this->sendOrderEmailToCustomer($recipientDetails, $selectedCounts, $stockItem->id);
+
+            $account = \common\models\Account::find()->where(['id' => $this->user->account_id])->one();
+
+            $emailer = new EmailKeys();
+
+            $result = $emailer->reEmailKeys($recipientDetails, $selectedCounts, $account);
+//            $result = $this->sendOrderEmailToCustomer($recipientDetails, $selectedCounts, $stockItem->id);
 
         }
         Yii::$app->response->format = 'json';
@@ -579,8 +573,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      * to build a table listing the keys for all stock in that state.
      *
      */
-    public function actionViewkeys()
-    {
+    public function actionViewkeys() {
         $status = 200;
         $errors = [];
 
@@ -604,8 +597,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      * FETCH KEYS
      * ==========
      */
-    public function actionFetchkeys()
-    {
+    public function actionFetchkeys() {
 
         if (($user = $this->getUserDetails()) === false) {
             $status   = 401;
@@ -616,10 +608,10 @@ class StockroomController extends \frontend\controllers\EdsrController
             $stockItemIds = Yii::$app->request->post('pid');
 
             $stockItems       = StockItem::find()
-                ->where(['stock_item.id' => $stockItemIds])
-                ->joinWith('stockroom')
-                ->andWhere(['account_id' => $user->account_id])
-                ->all();
+                                         ->where(['stock_item.id' => $stockItemIds])
+                                         ->joinWith('stockroom')
+                                         ->andWhere(['account_id' => $user->account_id])
+                                         ->all();
             $response['keys'] = [];
 
             foreach ($stockItems as $stockItem) {
@@ -642,8 +634,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return string
      */
-    public function actionRevieworders()
-    {
+    public function actionRevieworders() {
 
         $status = 200;
         $errors = [];
@@ -670,8 +661,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      * Gathers the number of items required per product as an array indexed
      * by product code.
      */
-    private function getAndValidateSelectedCounts()
-    {
+    private function getAndValidateSelectedCounts() {
         $selectedItems = Yii::$app->request->post('items');
 
         $pCodes = [];
@@ -697,8 +687,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      * GET AND VALIDATE RECIPIENT DETAILS
      * ==================================
      */
-    private function getAndValidateRecipientDetails()
-    {
+    private function getAndValidateRecipientDetails() {
         $recipientDetails = [
             'email'       => trim(Yii::$app->request->post('email', '')),
             'recipient'   => trim(Yii::$app->request->post('recipient')),
@@ -725,8 +714,8 @@ class StockroomController extends \frontend\controllers\EdsrController
 
         } else {
             $euser = EmailedUser::find()
-                ->where(['order_number' => StockItem::STATUS_DELIVERING . $recipientDetails['orderNumber'],
-                         'account_id'   => $this->user->account_id]);
+                                ->where(['order_number' => StockItem::STATUS_DELIVERING . $recipientDetails['orderNumber'],
+                                         'account_id'   => $this->user->account_id]);
             // ---------------------------------------------------------------
             // When re-emailing, we also get the emailuser id value, so need
             // to check that as well
@@ -749,12 +738,12 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return mixed
      */
-    private function getAndValidateDeliveryDetails()
-    {
+    private function getAndValidateDeliveryDetails() {
         $deliveryDetails = [
             'email'       => null,
             'recipient'   => null,
             'orderNumber' => trim(Yii::$app->request->post('onumber')),
+            'message'     => '',
             'errors'      => []
         ];
 
@@ -778,24 +767,23 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return array|\yii\db\ActiveRecord[]
      */
-    private function getValidStockItems($user)
-    {
+    private function getValidStockItems($user) {
         $stockItemIds = Yii::$app->request->post('items');
 
         // -------------------------------------------------------------------
         // This is because the deliver keys provides the id, but email sends
         // an array of details
         // -------------------------------------------------------------------
-        $siIds = [] ;
+        $siIds = [];
         foreach ($stockItemIds as $sItem) {
             if (is_array($sItem)) {
-                $siIds [] = $sItem['pid'] ;
+                $siIds [] = $sItem['pid'];
             } else {
-                $siIds[] = $sItem ;
+                $siIds[] = $sItem;
             }
         }
 
-        return $this->validateStockKeys($user, $siIds) ;
+        return $this->validateStockKeys($user, $siIds);
 
     }
 
@@ -810,10 +798,10 @@ class StockroomController extends \frontend\controllers\EdsrController
     protected function validateStockKeys($user, $siIds, $unpurchased = true) {
 
         $query = StockItem::find()
-            ->select('stock_item.id, stockroom_id')
-            ->where(['stock_item.id' => $siIds])
-            ->joinWith('stockroom')
-            ->andWhere(['account_id' => $user->account_id]) ;
+                          ->select('stock_item.id, stockroom_id')
+                          ->where(['stock_item.id' => $siIds])
+                          ->joinWith('stockroom')
+                          ->andWhere(['account_id' => $user->account_id]);
 
         if ($unpurchased) {
             $query->andWhere(['status' => StockItem::STATUS_PURCHASED]);
@@ -823,41 +811,14 @@ class StockroomController extends \frontend\controllers\EdsrController
 
         $stockItems = $query->asArray()->all();
 
-        $siIds = [] ;
+        $siIds = [];
         foreach ($stockItems as $sItem) {
-            $siIds[] = $sItem['id'] ;
+            $siIds[] = $sItem['id'];
         }
 
-        return $siIds ;
+        return $siIds;
     }
 
-    /**
-     * COMPLETE ORDER
-     * ==============
-     *
-     * @param array $recipientDetails email address, name, unique ref from popup form etc
-     * @param array $selectedItems Array of Stock Item IDs to send by email
-     * @param $account Account so we can include things like accountLogo
-     *
-     * @return array|StockroomController|mixed|string|static
-     * @throws \Exception
-     */
-    //private function completeEmailOrder($recipientDetails, $selectedCounts, $account=null) 
-    private function completeEmailOrder($recipientDetails, $selectedItems, $account=null) 
-    {
-        
-        \Yii::info(__METHOD__.': $recipientDetails='.print_r($recipientDetails,true));
-        \Yii::info(__METHOD__.': $selectedItems='.print_r($selectedItems,true));
-        \Yii::info(__METHOD__.': $account='.print_r($account,true));
-
-        list($result, $selectedDetails) = $this->saveEmailedOrderDetails($recipientDetails, $selectedItems);
-        
-        if ($result === true) {
-            $result = $this->sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $selectedItems[0], $account);
-        }
-
-        return $result;
-    }
 
     /**
      * COUNT AVAILABLE ITEMS PER PRODUCT
@@ -865,19 +826,18 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @param $pCodes
      */
-    private function countAvailableItemPerProduct(&$pCodes)
-    {
+    private function countAvailableItemPerProduct(&$pCodes) {
 
         $productCodes = array_keys($pCodes);
 
         $count  = StockItem::find()
-            ->where(['in', 'productcode', $productCodes])
-            ->andWhere(['stockroom_id' => $this->stockroomId])
-            ->andWhere(['<>', 'spare',StockItem::KEY_SPARE]) // RCH 20150820
-            ->andWhere(['<>', 'spare',StockItem::KEY_HIDDEN]) // RCH 20160229
-            ->groupBy(['productcode'])
-            ->select(['productcode, count(*) num'])
-            ->all();
+                           ->where(['in', 'productcode', $productCodes])
+                           ->andWhere(['stockroom_id' => $this->stockroomId])
+                           ->andWhere(['<>', 'spare', StockItem::KEY_SPARE])// RCH 20150820
+                           ->andWhere(['<>', 'spare', StockItem::KEY_HIDDEN])// RCH 20160229
+                           ->groupBy(['productcode'])
+                           ->select(['productcode, count(*) num'])
+                           ->all();
         $counts = [];
 
         foreach ($count as $cnt) {
@@ -891,7 +851,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      * =====================================
      * Compares the requested count to the actual available number for each
      * requested product and returns
-     * 
+     *
      * RCH 20160408 - Not used?
      *
      *      true            if all counts can be provided
@@ -901,8 +861,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return array|bool
      */
-    private function checkAvailableCountsAreSufficient($pCodes)
-    {
+    private function checkAvailableCountsAreSufficient($pCodes) {
         $inSufficient = [];
 
         foreach ($pCodes as $productCode => $details) {
@@ -913,229 +872,11 @@ class StockroomController extends \frontend\controllers\EdsrController
                 $inSufficient[$productCode] = $details['available'];
             }
         }
+
         //echo "\nEnd check ava";
 
         return count($inSufficient) == 0 ? [] : $inSufficient;
     }
-
-    /**
-     * SAVE EMAILED ORDER DETAILS
-     * ==========================
-     *
-     * @param $recipientDetails
-     * @param $selectedCounts
-     *
-     * @return array|string|static
-     * @throws \Exception
-     * @throws \yii\db\Exception
-     */
-    protected function saveEmailedOrderDetails($recipientDetails, &$selectedItems)
-    {
-        \Yii::info(__METHOD__.': $recipientDetails='.print_r($recipientDetails,true));
-        \Yii::info(__METHOD__.': $selectedItems='.print_r($selectedItems,true));
-
-        
-        $errors      = [];
-        $connection  = EmailedUser::getDb();
-        $transaction = $connection->beginTransaction();
-        $selectedDetails = [] ;
-
-        try {
-            $result = $this->saveEmailedRecipient($recipientDetails);
-
-            if ($result !== true) {
-                $errors['user'] = $result;
-
-                // ---------------------------------------------------------------
-                // Can now record the individual stock item movements
-                // ---------------------------------------------------------------
-            } else {
-                $newStatusCode = StockItem::STATUS_DELIVERING . $recipientDetails['orderNumber'];
-
-                $result = $this->updateStockItems($newStatusCode, $selectedItems);
-
-                if ($result !== true) {
-                    $errors['insufficient'] = $result;
-
-                } else {
-                    if ($this->copyStockItemsToEmailedItems($newStatusCode, $recipientDetails, $selectedItems)) {
-                        $selectedDetails = $this->readDescriptionAndKeys($recipientDetails, $selectedItems);
-                    } else {
-                        $errors['unknown'] = 'Failed';
-                    }
-                }
-            }
-            if (count($errors)) {
-                $result = $errors;
-                $transaction->rollBack();
-
-            } else {
-                $transaction->commit();
-                $result = true;
-            }
-
-        } catch (\Exception $e) {
-            $transaction->rollBack();
-            throw $e;
-        }
-
-        return array($result, $selectedDetails) ;
-    }
-
-    /**
-     * SAVE EMAILED RECIPIENT
-     * ======================
-     *
-     * @param $recipientDetails
-     *
-     * @return bool
-     */
-    private function saveEmailedRecipient(&$recipientDetails)
-    {
-        
-        \Yii::info(__METHOD__.': $recipientDetails='.print_r($recipientDetails,true));
-
-        $result = true;
-
-        // ---------------------------------------------------------------
-        // First, try to record the main emailed_user details
-        // ---------------------------------------------------------------
-        $emailedRecipient               = new EmailedUser();
-        $emailedRecipient->email        = $recipientDetails['email'];
-        $emailedRecipient->name         = $recipientDetails['recipient'];
-        $emailedRecipient->order_number = StockItem::STATUS_DELIVERING . $recipientDetails['orderNumber'];
-
-        $emailedRecipient->account_id = $this->user->account_id;
-
-        if (!$emailedRecipient->saveWithAuditTrail('Emailling '.$emailedRecipient->email.' with ' . $emailedRecipient->order_number)) {
-            $result = $emailedRecipient->errors;
-            \Yii::error(__METHOD__.': '.print_r($emailedRecipient->getErrors(),true));
-
-        } else {
-            $recipientDetails['emailedUser'] = $emailedRecipient;
-        }
-
-        return $result;
-    }
-
-    /**
-     * UPDATE STOCK ITEMS
-     * ==================
-     * This attempts to flag all the requested stock items as allocated to
-     * the current order
-     *
-     * @param $newStatusCode
-     * @param $selectedItems
-     *
-     * @return bool
-     * @throws \yii\db\Exception
-     */
-    private function updateStockItems($newStatusCode, $selectedItems)
-    {
-        $errors = [];
-        if(!empty($selectedItems)) {
-            
-
-        /*
-        $recordedCount = StockItem::updateAll(
-            ['status' => $newStatusCode],
-            [
-                'status'       => StockItem::STATUS_PURCHASED,
-                'stockroom_id' => $this->stockroomId,
-                'id'           => $selectedItems
-            ]
-        );
-         * 
-         */
-
-        // RCH 20150324
-              /* 
-        $condition = ['and',
-            ['=', 'status', StockItem::STATUS_PURCHASED],
-            ['=', 'stockroom_id', $this->stockroomId],
-            ['in', 'id', $selectedItems],
-        ];
-        
-        $recordedCount = StockItem::updateAll(
-            ['status' => $newStatusCode],
-            $condition
-        );
-               * 
-               */
-            $recordedCount = 0;
-
-            foreach ($selectedItems as $selectedItem) {
-                $stockItem = StockItem::find()
-                              ->where([
-                                      'status'=>StockItem::STATUS_PURCHASED, 
-                                      'stockroom_id'=>$this->stockroomId, 
-                                      'id'=>$selectedItem
-                                  ])->one();
-                if ($stockItem) {
-                    $stockItem->status = $newStatusCode;
-                    if($stockItem->saveWithAuditTrail('Recording StockItem delivery reference '.$newStatusCode . ', Email address: ' . Yii::$app->user->identity->email)) {
-                        $recordedCount++;
-                    }
-                }
-            }
-
-
-            // -------------------------------------------------------
-            // If failed to move enough, record the available count
-            // -------------------------------------------------------
-            if ($recordedCount <> count($selectedItems)) {
-                $errors[] = $recordedCount;
-            }
-        }
-
-        return count($errors) ? $errors : true;
-    }
-
-
-    /**
-     * @param $newStatusCode
-     * @param $selectedCounts
-     *
-     * @return bool
-     */
-//    private function updateByProductCode($newStatusCode, $selectedCounts)
-//    {
-//        $errors = [];
-//
-//        $connection = EmailedUser::getDb();
-//
-//        foreach ($selectedCounts['codes'] as $pCode => $details) {
-//            $quantity = $details['quantity'];
-//
-////                    $recordedCount = StockItem::limit($quantity)->updateAll(['status' => $newStatusCode],
-////                                            ['productcode' => $pCode,
-////                                             'status'      => StockItem::STATUS_PURCHASED]
-////                                        ) ;
-//
-//            $recordedCount = $connection->createCommand('UPDATE ' . StockItem::tableName() .
-//                ' SET status=:newStatusCode
-//                  WHERE
-//                    status = :oldStatus AND
-//                    productcode = :pCode AND
-//                    stockroom_id= :stockroomId
-//                    LIMIT ' . intval($quantity))
-//                ->bindValues([
-//                    ':newStatusCode' => $newStatusCode,
-//                    ':oldStatus'     => StockItem::STATUS_PURCHASED,
-//                    ':pCode'         => $pCode,
-//                    'stockroomId'    => $this->stockroomId
-//                ])->execute();
-//
-//            // -------------------------------------------------------
-//            // If failed to move enough, record the available count
-//            // -------------------------------------------------------
-//            if ($recordedCount <> $quantity) {
-//                $errors[$pCode] = $recordedCount;
-//            }
-//        }
-//
-//        return count($errors) ? $errors : true;
-//    }
 
     /**
      * UPDATE BY STOCK ITEM
@@ -1147,8 +888,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return bool
      */
-    private function updateByStockItemId($newStatusCode, $selectedItems)
-    {
+    private function updateByStockItemId($newStatusCode, $selectedItems) {
         $ids = [];
         foreach ($selectedItems as $item) {
             $ids[] = $item->id;
@@ -1159,78 +899,6 @@ class StockroomController extends \frontend\controllers\EdsrController
         return true;
     }
 
-    /**
-     * COPY STOCK ITEMS TO EMAILED ITEMS
-     * =================================
-     *
-     * @param $newStatusCode
-     * @param $recipientDetails
-     *
-     * @return bool|int
-     * @throws \yii\db\Exception
-     */
-    private function copyStockItemsToEmailedItems($newStatusCode, $recipientDetails, $selectedItems)
-    {
-        \Yii::info(__METHOD__.': $newStatusCode='.print_r($newStatusCode,true));
-        \Yii::info(__METHOD__.': $recipientDetails='.print_r($recipientDetails, true));
-        \Yii::info(__METHOD__.': $selectedItems='.print_r( $selectedItems,true));
-        
-        $result = true;
-
-        $connection = EmailedUser::getDb();
-
-        $sqlCommand = $connection->createCommand(
-            'INSERT INTO ' . EmailedItem::tableName() . '
-                                        (emailed_user_id, stock_item_id, created_at)
-                                        SELECT :emailedId, id, NOW()
-                                        FROM ' . StockItem::tableName() . 
-                                           ' WHERE ' .
-                                        //' status=:status '.
-                                        //    ' AND '.
-                                        'id IN ('.implode(',', $selectedItems).')'
-        )
-            ->bindValues([':emailedId' => $recipientDetails['emailedUser']['id'],
-                          //':status'    => $newStatusCode
-                          //':selectedItems' => implode(', ', $selectedItems)
-                          //':selectedItems' => $selectedItems
-            ]);
-        
-            $result = $sqlCommand->execute();
-
-        $msg       = 'Stock items Emailled/Printed to (email:' . $recipientDetails['email'] . ') (Ref: ' . $recipientDetails['orderNumber'].')';
-        $tableName = EmailedItem::tableName();
-        $recordId  = $recipientDetails['emailedUser']['id'];
-
-        $auditentry = new Audittrail();
-        $auditentry->log($msg, $tableName, $recordId, $this->user);
-        $auditentry->save();
-
-        return $result > 0;;
-    }
-
-    /**
-     * READ DESCRIPTION AND KEYS
-     * =========================
-     *
-     * @param $recipientDetails
-     * @param $selectedCounts
-     */
-    private function readDescriptionAndKeys($recipientDetails, &$selectedCounts)
-    {
-        $emailedUser = $recipientDetails['emailedUser'];
-        $selectedDetails = [] ;
-
-        foreach ($emailedUser->emailedItems as $emailedItem) {
-            $stockItem = $emailedItem->stockItem;
-
-            $productKey = DigitalPurchaser::getProductInstallKey($stockItem);
-
-            $selectedDetails['codes'][$stockItem['productcode']]['description'] = $stockItem->description;
-            $selectedDetails['codes'][$stockItem['productcode']]['faqs']        = $stockItem->digitalProduct->faqs;
-            $selectedDetails['codes'][$stockItem['productcode']]['keyItems'][$stockItem->id]  = $productKey;
-        }
-        return $selectedDetails ;
-    }
 
     /**
      * SEND ORDER EMAIL TO CUSTOMER
@@ -1242,19 +910,17 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @param                               $recipientDetails
      * @param                               $selectedCounts
-     * @param $account Account so we can include things like accountLogo
+     * @param                               $account Account so we can include things like accountLogo
      *
      * @return mixed
      */
-    private function sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $stockId, $account=null)
-            
-    {
-                
+    private function sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $stockId, $account = null) {
+
         $stockItemId = $stockId;
-        
-        \Yii::info(__METHOD__.': $recipientDetails='.print_r($recipientDetails,true));
-        \Yii::info(__METHOD__.': $selectedDetails='.print_r($selectedDetails,true));
-        \Yii::info(__METHOD__.': $account='.print_r($account,true));
+
+        \Yii::info(__METHOD__ . ': $recipientDetails=' . print_r($recipientDetails, true));
+        \Yii::info(__METHOD__ . ': $selectedDetails=' . print_r($selectedDetails, true));
+        \Yii::info(__METHOD__ . ': $account=' . print_r($account, true));
 
         $mailer           = Yii::$app->mailer;
         $oldViewPath      = $mailer->viewPath;
@@ -1262,36 +928,36 @@ class StockroomController extends \frontend\controllers\EdsrController
 
         $subject = 'Exertis Digital Stock Room: ' . Yii::t("user", "Order Details for " . $recipientDetails['orderNumber']); // RCH orderNumber is actuall just an arbitrary ref entered by the user
 
-        $account = Account::findOne(['id'=>Yii::$app->user->identity->account_id]);
+        $account = Account::findOne(['id' => Yii::$app->user->identity->account_id]);
 
         //Check if account has a logo
-       
-        if(!$account->logo){
-            
+
+        if (!$account->logo) {
+
             // RCH 20160425
             // We can't fail it here! it will prevent the email being sent and as this is called via AJAX
             // it'll fail silently, leaving a mess.
             // Consider generating another email to the user to ask them to set their logo up.
-            // 
-            // 
+            //
+            //
             //Yii::$app->getSession()->setFlash('warning', 'Please set a logo for your account.');
             //$this->redirect('/settings');
-            
+
             //return;
         }
-        
-        
+
+
         //Pushing product codes into an array
         //$this->generateCSVfile($selectedDetails);
         $this->printKey($stockItemId);
-        //$filename = 'codepdfs/code-'.Yii::$app->user->identity->id.'-'.Yii::$app->user->identity->account_id.'.pdf';        
-                
+        //$filename = 'codepdfs/code-'.Yii::$app->user->identity->id.'-'.Yii::$app->user->identity->account_id.'.pdf';
+
         $message = $mailer->compose('stockroom/orderedetails',
-            compact("subject", "recipientDetails", "selectedDetails", "account"))
-            ->setTo([$recipientDetails['email'] => $recipientDetails['recipient']])
-            ->setBcc(Yii::$app->params['account.copyAllEmailsTo'])// RCH 20150420
-            ->setSubject($subject);
-            //->attach($filename);
+                                    compact("subject", "recipientDetails", "selectedDetails", "account"))
+                          ->setTo([$recipientDetails['email'] => $recipientDetails['recipient']])
+                          ->setBcc(Yii::$app->params['account.copyAllEmailsTo'])// RCH 20150420
+                          ->setSubject($subject);
+        //->attach($filename);
 
         // check for messageConfig before sending (for backwards-compatible purposes)
         if (empty($mailer->messageConfig["from"])) {
@@ -1303,31 +969,31 @@ class StockroomController extends \frontend\controllers\EdsrController
 
         return $result;
     }
-    
+
     /*
      * Generate CSV File
      * Creates a CSV file for the codes
      */
-    private function generateCSVfile($selectedDetails){
-        
+    private function generateCSVfile($selectedDetails) {
+
         $codes = [];
         foreach ($selectedDetails['codes'] as $productCode => $details) {
-        
+
             foreach ($details['keyItems'] as $productKey) {
                 array_push($codes, $productKey);
             }
         }
-        
+
         //Creating CSV file.
         $csvFile = "Codes\n";
-        foreach($codes as $code){
-            $csvFile .= $code."\n";
+        foreach ($codes as $code) {
+            $csvFile .= $code . "\n";
         }
-        
-        $csv_handler = fopen ('Codes.csv','w');
-        fwrite($csv_handler,$csvFile);
+
+        $csv_handler = fopen('Codes.csv', 'w');
+        fwrite($csv_handler, $csvFile);
         fclose($csv_handler);
-        
+
     }
 
     /**
@@ -1340,18 +1006,17 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return string
      */
-    private function fetchProductAndKeys($status, $digitalProductId)
-    {
+    private function fetchProductAndKeys($status, $digitalProductId) {
         $dprod = DigitalProduct::findOne($digitalProductId);
 
         $stockItems = StockItem::find()
-            ->where(['stockroom_id' => $this->stockroomId])
-            ->andWhere(['productcode' => $dprod->partcode])
-            ->andWhere(['status' => $status])
-            ->andWhere(['<>', 'spare',StockItem::KEY_SPARE]) // RCH 20150820
-            ->andWhere(['<>', 'spare',StockItem::KEY_HIDDEN]) // RCH 20160229                
-            ->orderBy(['id' => SORT_DESC])
-            ->all();
+                               ->where(['stockroom_id' => $this->stockroomId])
+                               ->andWhere(['productcode' => $dprod->partcode])
+                               ->andWhere(['status' => $status])
+                               ->andWhere(['<>', 'spare', StockItem::KEY_SPARE])// RCH 20150820
+                               ->andWhere(['<>', 'spare', StockItem::KEY_HIDDEN])// RCH 20160229
+                               ->orderBy(['id' => SORT_DESC])
+                               ->all();
 
         return $this->render('keyview', [
             'product' => $dprod,
@@ -1368,17 +1033,16 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return string
      */
-    private function fetchOrderHistory($status, $digitalProductId)
-    {
+    private function fetchOrderHistory($status, $digitalProductId) {
         $dprod = DigitalProduct::findOne($digitalProductId);
 
         $stockItems = StockItem::find()
-            ->where(['stockroom_id' => $this->stockroomId])
-            ->andWhere(['productcode' => $dprod->partcode])
-            ->andWhere(['status' => $status])
-            ->andWhere(['<>', 'spare',StockItem::KEY_SPARE]) // RCH 20150820
-            ->andWhere(['<>', 'spare',StockItem::KEY_HIDDEN]) // RCH 20160229
-            ->all();
+                               ->where(['stockroom_id' => $this->stockroomId])
+                               ->andWhere(['productcode' => $dprod->partcode])
+                               ->andWhere(['status' => $status])
+                               ->andWhere(['<>', 'spare', StockItem::KEY_SPARE])// RCH 20150820
+                               ->andWhere(['<>', 'spare', StockItem::KEY_HIDDEN])// RCH 20160229
+                               ->all();
 
         return $this->render('orderhistory', [
             'product' => $dprod,
@@ -1398,31 +1062,26 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return mixed
      */
-    private function clearOldSelectedItems()
-    {
+    private function clearOldSelectedItems() {
         $result = $this->getUserDetails();
         if ($result) {
             $sessionOrders = SessionDelivering::deleteAll(
                 ['and', ['<>', 'session_id', session_id()],
-                    ['>', 'TIMESTAMPDIFF(MINUTE, updated_at, NOW())', self::MAX_LIFE_IN_MINUTES]
+                 ['>', 'TIMESTAMPDIFF(MINUTE, updated_at, NOW())', self::MAX_LIFE_IN_MINUTES]
                 ]
             );
         }
 
         return $result;
     }
-   
-    
-    
-    
-    //=========================PRINTING KEY==============================\\
-    
-    
 
-    public function printKey($key)
-    {
+
+    //=========================PRINTING KEY==============================\\
+
+
+    public function printKey($key) {
         $keys = explode(',', $key);
-        
+
         return $this->printKeys($keys, false);
     }
 
@@ -1438,8 +1097,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      * @throws
      * @throws \Exception
      */
-    private function printKeys($stockitem_ids, $unpurchasedOnly)
-    {
+    private function printKeys($stockitem_ids, $unpurchasedOnly) {
         if (\Yii::$app->user->isGuest) {
             return $this->redirect('/user/index');
         }
@@ -1453,8 +1111,8 @@ class StockroomController extends \frontend\controllers\EdsrController
             $stockitem_ids = $this->validateStockKeys($user, $stockitem_ids, $unpurchasedOnly);
 
             StockActivity::log('Printing keys for ' . count($stockitem_ids) . ' products', $this->stockroomId,
-                null, null,
-                EmailedItem::tableName(), null
+                               null, null,
+                               EmailedItem::tableName(), null
             );
 
             $recipientDetails = [
@@ -1468,7 +1126,9 @@ class StockroomController extends \frontend\controllers\EdsrController
             // If we're re-printing, we don't need to record the details
             // ---------------------------------------------------------------
             if ($unpurchasedOnly) {
-                list($result, $selectedDetails) = $this->saveEmailedOrderDetails($recipientDetails, $stockitem_ids);
+                $emailer = new EmailKeys();
+                $account = \common\models\Account::find()->where(['id' => $this->user->account_id])->one();
+                list($result, $selectedDetails) = $emailer->saveEmailedOrderDetails($recipientDetails, $stockitem_ids, $account);
             } else {
                 $result = true;
             }
@@ -1501,16 +1161,15 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return array
      */
-    private function findAllProducts($keys)
-    {
+    private function findAllProducts($keys) {
         $stockItems = StockItem::find()
-            ->select('stock_item.id, productcode, stockroom_id, eztorm_order_id, eztorm_product_id') // RCH 20160215 Added stockroom_id and eztorm_order_id to stop Reprint keys failing when we call DigitalPurchaser
-            ->where(['stock_item.id' => $keys])
-            ->joinWith('stockroom')
-            ->joinWith('digitalProduct')
-            ->joinWith('digitalProduct.productLeafletInfo')
-            ->andWhere(['account_id' => $this->user->account_id])
-            ->all();
+                               ->select('stock_item.id, productcode, stockroom_id, eztorm_order_id, eztorm_product_id')// RCH 20160215 Added stockroom_id and eztorm_order_id to stop Reprint keys failing when we call DigitalPurchaser
+                               ->where(['stock_item.id' => $keys])
+                               ->joinWith('stockroom')
+                               ->joinWith('digitalProduct')
+                               ->joinWith('digitalProduct.productLeafletInfo')
+                               ->andWhere(['account_id' => $this->user->account_id])
+                               ->all();
 
         $products = [];
 
@@ -1526,23 +1185,23 @@ class StockroomController extends \frontend\controllers\EdsrController
                 'key'         => DigitalPurchaser::getProductInstallKey($sitem),
                 'leaflet'     => [
 //                    'image'      => Yii::getAlias('@webroot') . '/' . Yii::$app->params['uploadPath'] . 'product_leaflets/' . $partcode . '/' . $sitem->digitalProduct->productLeafletInfo->image,
-                    'image_type'      => $sitem->digitalProduct->productLeafletInfo->image_type,
-                    'image'           => $sitem->digitalProduct->productLeafletInfo->getLeafletImageFilename(),
+'image_type' => $sitem->digitalProduct->productLeafletInfo->image_type,
+'image'      => $sitem->digitalProduct->productLeafletInfo->getLeafletImageFilename(),
 
-                    'key_xcoord'      => $sitem->digitalProduct->productLeafletInfo->key_xcoord,
-                    'key_ycoord'      => $sitem->digitalProduct->productLeafletInfo->key_ycoord,
-                    'key_box_width'   => $sitem->digitalProduct->productLeafletInfo->key_box_width,
-                    'key_box_height'  => $sitem->digitalProduct->productLeafletInfo->key_box_height,
+'key_xcoord'     => $sitem->digitalProduct->productLeafletInfo->key_xcoord,
+'key_ycoord'     => $sitem->digitalProduct->productLeafletInfo->key_ycoord,
+'key_box_width'  => $sitem->digitalProduct->productLeafletInfo->key_box_width,
+'key_box_height' => $sitem->digitalProduct->productLeafletInfo->key_box_height,
 
-                    'logo_xcoord'     => $sitem->digitalProduct->productLeafletInfo->logo_xcoord,
-                    'logo_ycoord'     => $sitem->digitalProduct->productLeafletInfo->logo_ycoord,
-                    'logo_box_width'  => $sitem->digitalProduct->productLeafletInfo->logo_box_width,
-                    'logo_box_height' => $sitem->digitalProduct->productLeafletInfo->logo_box_height,
+'logo_xcoord'     => $sitem->digitalProduct->productLeafletInfo->logo_xcoord,
+'logo_ycoord'     => $sitem->digitalProduct->productLeafletInfo->logo_ycoord,
+'logo_box_width'  => $sitem->digitalProduct->productLeafletInfo->logo_box_width,
+'logo_box_height' => $sitem->digitalProduct->productLeafletInfo->logo_box_height,
 
-                    'name_xcoord'     => $sitem->digitalProduct->productLeafletInfo->name_xcoord,
-                    'name_ycoord'     => $sitem->digitalProduct->productLeafletInfo->name_ycoord,
-                    'name_box_width'  => $sitem->digitalProduct->productLeafletInfo->name_box_width,
-                    'name_box_height' => $sitem->digitalProduct->productLeafletInfo->name_box_height
+'name_xcoord'     => $sitem->digitalProduct->productLeafletInfo->name_xcoord,
+'name_ycoord'     => $sitem->digitalProduct->productLeafletInfo->name_ycoord,
+'name_box_width'  => $sitem->digitalProduct->productLeafletInfo->name_box_width,
+'name_box_height' => $sitem->digitalProduct->productLeafletInfo->name_box_height
                 ]
             ];
         }
@@ -1561,8 +1220,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return string
      */
-    private function printAllProducts($products)
-    {
+    private function printAllProducts($products) {
         $html = '';
         foreach ($products as $product) {
             $view = $this->findViewfileForProduct($product);
@@ -1589,8 +1247,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return string
      */
-    private function findViewfileForProduct($product)
-    {
+    private function findViewfileForProduct($product) {
         $baseViewPath  = $this->viewPath . '/';
         $localViewPath = '../../printkeys/mindypdftemplates/';
 
@@ -1602,7 +1259,7 @@ class StockroomController extends \frontend\controllers\EdsrController
         if (!is_file($fullPath) || !is_readable($fullPath)) {
             $productView = $localViewPath . 'default.php';
         } else {
-            die (__METHOD__.': $fullPath=' . $fullPath);
+            die (__METHOD__ . ': $fullPath=' . $fullPath);
         }
 
         return $productView;
@@ -1619,8 +1276,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @return string
      */
-    private function processProduct($product, $view)
-    {
+    private function processProduct($product, $view) {
 
         // -----------------------------------------------------------------------
         // Creating the image using the raw data is intensive and needs a lot of ram
@@ -1652,8 +1308,7 @@ class StockroomController extends \frontend\controllers\EdsrController
      * Find the ttf font to use for the text output. The same font should ideally
      * be used in the editor at the back end
      */
-    private function checkFonts()
-    {
+    private function checkFonts() {
         if (!defined('TTF_DIR')) {
             if (!array_key_exists('fontLocation', Yii::$app->params)) {
                 die('You must define params[\'fontLocation\']');
@@ -1671,13 +1326,11 @@ class StockroomController extends \frontend\controllers\EdsrController
         }
     }
 
-    private function getLeafletGdImage($product)
-    {
+    private function getLeafletGdImage($product) {
         return $this->getImageObject($product['leaflet']['image_type'], $product['leaflet']['image']);
     }
 
-    private function addKeyToLeaflet($leafletImage, $product)
-    {
+    private function addKeyToLeaflet($leafletImage, $product) {
         $this->checkFonts();
 
         //$text = 'YF3CN-3WXXY-7XXM2-YXX86-2XXMF'; // Debug / Demo
@@ -1722,12 +1375,11 @@ class StockroomController extends \frontend\controllers\EdsrController
         imagettftext($leafletImage, $fontSize, $angle, $xpos + $xoffset, $ypos + $yoffset, $black, $fontFile, $text);
     }
 
-    private function addNameToLeaflet($leafletImage, $product)
-    {
+    private function addNameToLeaflet($leafletImage, $product) {
         $this->checkFonts();
 
         //var_dump($product); die();
-        
+
         //$text = 'YF3CN-3WXXY-7XXM2-YXX86-2XXMF'; // Debug / Demo
         $text = $product['description'];
 
@@ -1770,8 +1422,7 @@ class StockroomController extends \frontend\controllers\EdsrController
         imagettftext($leafletImage, $fontSize, $angle, $xpos + $xoffset, $ypos + $yoffset, $black, $fontFile, $text);
     }
 
-    private function addAccountLogoToLeaflet($leafletImage, $product)
-    {
+    private function addAccountLogoToLeaflet($leafletImage, $product) {
         if ($product['leaflet']['logo_box_width'] && $product['leaflet']['logo_box_height']) {
             $accountLogo = $this->user->account->getAccountLogo();
             if ($accountLogo) {
@@ -1822,9 +1473,9 @@ class StockroomController extends \frontend\controllers\EdsrController
                     $yoffset = $top + abs($lbHeight - $height) / 2;
 
                     imagecopyresized($leafletImage, $logoGdImage,
-                        0, 0, 0, 0,
-                        $xoffset, $yoffset,
-                        $width, $height, $owidth, $oheight);
+                                     0, 0, 0, 0,
+                                     $xoffset, $yoffset,
+                                     $width, $height, $owidth, $oheight);
 
                 } else {
                     imagecopy($leafletImage, $logoGdImage, $left, $top, 0, 0, $width, $height);
@@ -1835,8 +1486,7 @@ class StockroomController extends \frontend\controllers\EdsrController
     }
 
 
-    private function getImageObject($imageType, $imageFile)
-    {
+    private function getImageObject($imageType, $imageFile) {
         switch ($imageType) {
             case 'image/jpeg':
                 return imagecreatefromjpeg($imageFile);
@@ -1861,35 +1511,35 @@ class StockroomController extends \frontend\controllers\EdsrController
      *
      * @param $html
      */
-    private function convertHtmlToPdf($html)
-    {
-        $filename = 'codepdfs/code-'.Yii::$app->user->identity->id.'-'.Yii::$app->user->identity->account_id.'.pdf';
+    private function convertHtmlToPdf($html) {
+        $filename = 'codepdfs/code-' . Yii::$app->user->identity->id . '-' . Yii::$app->user->identity->account_id . '.pdf';
 
         $pdf = new Pdf([
-            'mode'        => Pdf::MODE_CORE,
-            'format'      => 'A4',  //  Pdf::FORMAT_A4,
-            'orientation' => Pdf::ORIENT_PORTRAIT,
+                           'mode'        => Pdf::MODE_CORE,
+                           'format'      => 'A4',  //  Pdf::FORMAT_A4,
+                           'orientation' => Pdf::ORIENT_PORTRAIT,
 
-            'methods'     => [
-                'SetHeader' => ['Krajee Report Header'],
-                'SetFooter' => ['{PAGENO}'],
-            ],
+                           'methods' => [
+                               'SetHeader' => ['Krajee Report Header'],
+                               'SetFooter' => ['{PAGENO}'],
+                           ],
 
-            'content'     => $html,
-            'filename'    => $filename,
-            'destination' => Pdf::DEST_FILE,
+                           'content'     => $html,
+                           'filename'    => $filename,
+                           'destination' => Pdf::DEST_FILE,
 
-            'cssFile'     => 'css/mindy.css',
+                           'cssFile' => 'css/mindy.css',
 
-        ]);
+                       ]);
 
         echo $pdf->render();
+
         return;
-        
+
         /*$mpdf = new \mPDF();
         $mpdf->WriteHTML($html);
         $mpdf->Output('code.pdf', 'F');*/
-        
+
         // -------------------------------------------------------------------
         // Produce a single pdf with all pages at A4 size
         // -------------------------------------------------------------------
@@ -1907,7 +1557,7 @@ class StockroomController extends \frontend\controllers\EdsrController
 
     }
 
-    
+
     //===================================================================\\
 
 }

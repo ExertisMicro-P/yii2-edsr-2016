@@ -15,15 +15,23 @@ use kartik\mpdf\Pdf;
 class PrintKeys {
     private $user;
     private $userEmail;
-    private $viewPath ;
+    private $defaultViewPath;
+    private $viewPath;
 
     /**
      * EmailKeys constructor.
      * ======================
      * Used to set the user and user email, for use in logging,
      */
-    public function __construct($viewpath) {
-        $this->viewPath = $viewpath ;
+    public function __construct($viewpath = null) {
+
+        $this->defaultViewPath = '@frontend/views/printkeys';
+
+        if (!$viewpath) {
+            $viewpath = $this->defaultViewPath ;
+        }
+        $this->viewPath = $viewpath;
+
 
         if (!(\Yii::$app instanceof yii\console\Application) && \Yii::$app->user) {
             $this->user      = Yii::$app->user->getIdentity();
@@ -40,15 +48,30 @@ class PrintKeys {
      * ==========
      *
      * @param $stockitemIds
-     * @param $viewPath
      *
      * @return mixed
      */
-    public function printKeys ($stockitemIds) {
+    public function printKeys($stockitemIds, $filename = null) {
         $products = $this->findAllProducts($stockitemIds);
         $html     = $this->printAllProducts($products);
 
-        return $this->convertHtmlToPdf($html);
+        return $this->convertHtmlToPdf($html, $filename);
+    }
+
+
+    /**
+     * PRODUCE KEY PDF
+     * ===============
+     *
+     * @param $stockitemIds
+     *
+     * @return mixed
+     */
+    public function produceKeyPdf($stockitemIds, $filename) {
+        $products = $this->findAllProducts($stockitemIds);
+        $html     = $this->printAllProducts($products);
+
+        return $this->producePdf($html, $filename);
     }
 
 
@@ -157,7 +180,7 @@ class PrintKeys {
         $fullPath = $baseViewPath . $productView;
 
         if (!is_file($fullPath) || !is_readable($fullPath)) {
-            $productView = $localViewPath . 'default.php';
+            $productView = $this->defaultViewPath . '/' . $localViewPath . 'default.php';
 
         } else {
             //die (__METHOD__.': $fullPath=' . $fullPath);
@@ -273,7 +296,6 @@ class PrintKeys {
     }
 
 
-
     /**
      * ADD KEY TO LEAFLET
      * ==================
@@ -289,7 +311,6 @@ class PrintKeys {
      * @param $product
      */
     private function addKeyToLeaflet($leafletImage, $product) {
-
 
 
         //$text = 'YF3CN-3WXXY-7XXM2-YXX86-2XXMF'; // Debug / Demo
@@ -333,7 +354,6 @@ class PrintKeys {
 
         imagettftext($leafletImage, $fontSize, $angle, $xpos + $xoffset, $ypos + $yoffset, $black, $fontFile, $text);
     }
-
 
 
     /**
@@ -477,24 +497,28 @@ class PrintKeys {
      *
      * @param $html
      */
-    private function convertHtmlToPdf($html) {
+    private function convertHtmlToPdf($html, $filename = null) {
+
+        if ($filename) {
+            $destination = Pdf::DEST_FILE;
+        } else {
+            $destination = Pdf::DEST_BROWSER;
+            $filename    = '';
+        }
 
         $pdf = new Pdf([
                            'mode'        => Pdf::MODE_CORE,
                            'format'      => 'A4',  //  Pdf::FORMAT_A4,
                            'orientation' => Pdf::ORIENT_PORTRAIT,
-
-                           'methods' => [
+                           'methods'     => [
                                'SetHeader' => ['Krajee Report Header'],
                                'SetFooter' => ['{PAGENO}'],
                            ],
-
                            'content'     => $html,
-                           //            'filename'    => $workPDF ,
-                           'destination' => Pdf::DEST_BROWSER,
+                           'cssFile'     => 'css/mindy.css',
 
-                           'cssFile' => 'css/mindy.css',
-
+                           'destination' => $destination,
+                           'filename'    => $filename
                        ]);
 
         echo $pdf->render();
@@ -517,6 +541,5 @@ class PrintKeys {
 //        echo file_get_contents($workPDF);
 
     }
-
 
 }

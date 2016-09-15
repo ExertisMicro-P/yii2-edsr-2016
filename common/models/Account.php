@@ -7,10 +7,12 @@ use Yii;
 use common\models\gauth\GAUser;
 use common\models\AccountQuery;
 use common\models\EDSRRole;
+use common\models\DropshipEmailDetails;
 use console\components\FileFeedErrorCodes;
 use console\components\AccountSetupException;
 use exertis\savewithaudittrail\SaveWithAuditTrailBehavior;
 use exertis\savewithaudittrail\models\Audittrail;
+use common\components\EmailKeys;
 
 use yii\helpers\Url;
 
@@ -269,6 +271,8 @@ class Account extends \yii\db\ActiveRecord {
 
 
     /**
+     * SEND STOCK ITEM CREATED EMAIL
+     * =============================
      * Send email to announce arrival of new stock in stockrooms
      *
      * @return int
@@ -279,7 +283,8 @@ class Account extends \yii\db\ActiveRecord {
 
         \Yii::info(__METHOD__ . ':' . print_r($data, true));
 
-        $account = $this;
+        $account                       = $this;
+        $account->include_key_in_email = true;
 
         // RCH 20150402
         // Check flag on account to see if we should include keys in the email
@@ -287,7 +292,7 @@ class Account extends \yii\db\ActiveRecord {
 
         if ($account->include_key_in_email) {
 
-//            $result = $this->sendEmailWithAllKeys($data) ;            // The orignal code, all keys in one email
+//            $result = $this->sendEmailWithAllKeys($data) ;            // The original code, all keys in one email
             $result = $this->sendEmailPerPO($data);
 
             $this->generateCSVfile($data);
@@ -295,6 +300,8 @@ class Account extends \yii\db\ActiveRecord {
         } else {
             $result = $this->sendEmailWithoutKeys($data);
         }
+
+        $this->emailDropshipNotifications($data);
 
         return $result;
 
@@ -384,11 +391,7 @@ class Account extends \yii\db\ActiveRecord {
      * @return bool
      */
     private function sendEmailPerPO($selectedDetails) {
-        $mailerDetails = $this->setViewPathToModuleViews();
-        $mailer        = $mailerDetails[0];
-        $csvFilename   = 'Codes.csv';
-        $showkeys      = $selectedDetails['showkeys'];
-        $result        = true;
+        $result = true;
 
         foreach ($selectedDetails['pos'] as $poKey => $details) {
             $codes = [];
@@ -398,22 +401,57 @@ class Account extends \yii\db\ActiveRecord {
                 array_push($codes, $item->key);
             }
 
-            $this->buildCSVFile($codes, $csvFilename);
-
-            $data = [
-                'pos'      => [$poKey => $details],
-                'showkeys' => $showkeys
-            ];
-
-            if (!$this->sendEmail($mailer, $data, $csvFilename)) {
-                $result = false;
-                break;
-            }
         }
-        $this->restoreViewPath($mailerDetails);
 
         return $result;
     }
+
+    /**
+     * EMAIL DROP SHIP NOTIFICATIONS
+     * =============================
+     * Checks through the provided order details for any where a dropship
+     * address has been provided for both the account and purchase order.
+     *
+     * If any match, the keys will be sent out immediately.
+     *
+     * THIS NEEDS TO BE ADJUSTED TO CATER FOR THE BRAND
+     *
+     * @param $selectedDetails
+     *
+     * @return bool
+     */
+    private function emailDropshipNotifications($selectedDetails) {
+        $result  = true;
+        $emailer = new EmailKeys();
+
+
+        foreach ($selectedDetails['pos'] as $poKey => $details) {
+
+            $dse = DropshipEmailDetails::find()
+                                       ->where(['account_id' => $this->id])
+                                       ->andWhere(['po' => $poKey])
+                                       ->one();
+            if ($dse) {
+                $recipientDetails = [
+                    'email'       => $dse->email,
+                    'recipient'   => '',
+                    'orderNumber' => $dse->po,
+                    'message'     => ''
+                ];
+
+                $codes = [];
+                foreach ($details as $detail) {
+                    $codes[] = $detail['orderdetails']->stock_item_id;
+                }
+                if (count($codes)) {
+                    $emailer->completeEmailOrder($recipientDetails, $codes, $this);
+                }
+            }
+        }
+
+        return $result;
+    }
+
 
     /**
      * RESTORE VIEW PATH
@@ -449,12 +487,12 @@ class Account extends \yii\db\ActiveRecord {
      * SEND EMAIL
      * =========
      *
-     * @param $mailer
-     * @param $csvFile
+     * @param       $mailer
+     * @param       $csvFile
      *
      * @return mixed
      *
-     * @var Mailer $mailer
+     * @var Mailer  $mailer
      * @var Message $message
      */
     private function sendEmail($mailer, $selectedDetails, $csvFile) {
@@ -464,6 +502,7 @@ class Account extends \yii\db\ActiveRecord {
         $customer   = $account->customer;
 
         $email = $account->findMainUser()->email;
+        $email = 'noel@crewe-it.co.uk';
 
         $subject = 'Exertis Digital Stock Room: ' . Yii::t("app", "Account") . ' ' . $accountNum . ' ' . $customer->name . ' stock item available';
         $message = $mailer->compose('stockItemCreatedEmail', compact("subject", "account", "selectedDetails"))
@@ -530,6 +569,7 @@ class Account extends \yii\db\ActiveRecord {
         $account    = $this;
         $accountNum = $account->customer_exertis_account_number;
         $customer   = $account->customer;
+
         //$profile = $user->profile;
         //$email   = $user->new_email !== null ? $user->new_email : $user->email;
 

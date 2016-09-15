@@ -399,13 +399,9 @@ class EmailKeys {
             //return;
         }
 
-
-//        $this->printKey($stockItemId);
-
         \Yii::info('ABOUT TO EMAIL');
         \Yii::info($recipientDetails['recipient']);
         \Yii::info(print_r(Yii::$app->params['account.copyAllEmailsTo'], true));
-
 
         $message = $mailer->compose('stockroom/orderedetails',
                                     compact("subject", "recipientDetails", "selectedDetails", "account"))
@@ -426,74 +422,14 @@ class EmailKeys {
         return $result;
     }
 
-    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    public function printKey($key) {
-        $keys = explode(',', $key);
-
-        return $this->printKeys($keys, false);
-    }
 
 
-    /**
-     * PRINT KEYS
-     * ==========
-     *
-     * @param $stockitem_ids
-     * @param $unpurchasedOnly
-     *
-     * @return string|void|\yii\web\Response
-     * @throws
-     * @throws \Exception
-     */
-    private function printKeys($stockitem_ids, $unpurchasedOnly) {
-        if (!$this->user || $this->user->isGuest) {
-            return $this->redirect('/user/index');
+
         }
 
-        if (($user = $this->getUserDetails()) === false) {
-            return $this->redirect('/user/index');
 
-        } else {
-            $this->layout = false;
 
-            $stockitem_ids = $this->validateStockKeys($user, $stockitem_ids, $unpurchasedOnly);
-
-            StockActivity::log('Printing keys for ' . count($stockitem_ids) . ' products', $this->stockroomId,
-                               null, null,
-                               EmailedItem::tableName(), null
-            );
-
-            $recipientDetails = [
-                'email'       => null,
-                'recipient'   => null,
-                'orderNumber' => 'PrintedKeys' . date('d-m-Y H:i:s'),
-                'errors'      => []
-            ];
-
-            // ---------------------------------------------------------------
-            // If we're re-printing, we don't need to record the details
-            // ---------------------------------------------------------------
-            if ($unpurchasedOnly) {
-                $emailer = new EmailKeys();
-                $account = \common\models\Account::find()->where(['id' => $this->user->account_id])->one();
-                list($result, $selectedDetails) = $emailer->saveEmailedOrderDetails($recipientDetails, $stockitem_ids, $account);
-            } else {
-                $result = true;
             }
-
-            if ($result === true) {
-                $products = $this->findAllProducts($stockitem_ids);
-                $html     = $this->printAllProducts($products);
-
-                return $this->convertHtmlToPdf($html);
-
-            } else {
-                $status = 404;
-                print_r($result);
-
-                return 'Invalid request';
-
             }
         }
     }

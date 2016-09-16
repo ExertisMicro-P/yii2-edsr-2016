@@ -61,7 +61,7 @@ class EmailKeys {
 
         \Yii::info(__METHOD__ . ': $recipientDetails=' . print_r($recipientDetails, true));
         \Yii::info(__METHOD__ . ': $selectedItems=' . print_r($selectedItems, true));
-        \Yii::info(__METHOD__ . ': $account=' . print_r($account, true));
+        \Yii::info(__METHOD__ . ': $account=' . print_r($account->attributes, true));
 
         list($result, $selectedDetails) = $this->markKeysAsProcessed($recipientDetails, $selectedItems, $account);
 
@@ -89,7 +89,7 @@ class EmailKeys {
 
         \Yii::info(__METHOD__ . ': $recipientDetails=' . print_r($recipientDetails, true));
         \Yii::info(__METHOD__ . ': $selectedItems=' . print_r($selectedItems, true));
-        \Yii::info(__METHOD__ . ': $account=' . print_r($account, true));
+        \Yii::info(__METHOD__ . ': $account=' . print_r($account->attributes, true));
 
         $result = $this->sendOrderEmailToCustomer($recipientDetails, $selectedItems, $account);
 
@@ -129,7 +129,7 @@ class EmailKeys {
 
         \Yii::info(__METHOD__ . ': $recipientDetails=' . print_r($recipientDetails, true));
         \Yii::info(__METHOD__ . ': $selectedItems=' . print_r($selectedItems, true));
-        \Yii::info(__METHOD__ . ': $account=' . print_r($account, true));
+        \Yii::info(__METHOD__ . ': $account=' . print_r($account->attributes, true));
 
         list($result, $selectedDetails) = $this->markKeysAsProcessed($recipientDetails, $selectedItems, $account);
 
@@ -207,8 +207,6 @@ class EmailKeys {
      * @return bool
      */
     private function saveEmailedRecipient(&$recipientDetails, $account) {
-
-        \Yii::info(__METHOD__ . ': $recipientDetails=' . print_r($recipientDetails, true));
 
         $result = true;
 
@@ -380,10 +378,6 @@ class EmailKeys {
      */
     private function sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $account) {
 
-        \Yii::info(__METHOD__ . ': $recipientDetails=' . print_r($recipientDetails, true));
-        \Yii::info(__METHOD__ . ': $selectedDetails=' . print_r($selectedDetails, true));
-        \Yii::info(__METHOD__ . ': $account=' . print_r($account, true));
-
         $mailer           = Yii::$app->mailer;
         $oldViewPath      = $mailer->viewPath;
         $mailer->viewPath = '@common/mail';
@@ -405,9 +399,6 @@ class EmailKeys {
             //return;
         }
 
-        \Yii::info('ABOUT TO EMAIL');
-        \Yii::info($recipientDetails['recipient']);
-        \Yii::info(print_r(Yii::$app->params['account.copyAllEmailsTo'], true));
 
         $message = $mailer->compose('stockroom/orderedetails',
                                     compact("subject", "recipientDetails", "selectedDetails", "account"))

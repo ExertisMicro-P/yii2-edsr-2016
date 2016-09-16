@@ -23,7 +23,7 @@ class PrintKeys {
      * ======================
      * Used to set the user and user email, for use in logging,
      */
-    public function __construct($viewpath = null) {
+    public function __construct($account = null, $viewpath = null) {
 
         $this->defaultViewPath = '@frontend/views/printkeys';
 

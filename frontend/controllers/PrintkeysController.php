@@ -119,7 +119,7 @@ class PrintkeysController extends yiicomp\StockroomController {
             }
 
             if ($result === true) {
-                $keyPrinter = new printKeys($this->viewPath) ;
+                $keyPrinter = new printKeys($this->user->account, $this->viewPath) ;
                 return $keyPrinter->printKeys($stockitem_ids) ;
 
             } else {

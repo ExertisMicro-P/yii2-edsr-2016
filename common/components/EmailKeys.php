@@ -17,6 +17,7 @@ use exertis\savewithaudittrail\models\Audittrail;
 class EmailKeys {
     private $user;
     private $userEmail;
+    private $workDir;
 
     /**
      * EmailKeys constructor.
@@ -28,10 +29,15 @@ class EmailKeys {
         if (!(\Yii::$app instanceof yii\console\Application) && \Yii::$app->user) {
             $this->user      = Yii::$app->user->getIdentity();
             $this->userEmail = $this->user->email;
+            $this->workDir   = Yii::getAlias('@frontend') . '/runtime/tmp';
 
         } else {
             $this->user      = null;
             $this->userEmail = '<system process>';
+            $this->workDir   = Yii::getAlias('@console') . '/runtime/tmp';
+        }
+        if (!is_dir($this->workDir)) {
+            mkdir($this->workDir, 0600, true) ;
         }
     }
 
@@ -429,6 +435,7 @@ class EmailKeys {
         $filename = $this->produceKeyPdf($selectedDetails) ;
 
         $message->attach($filename);
+        $filename = tempnam($this->workDir, 'key') ;
 
 //        unlink($filename) ;
 

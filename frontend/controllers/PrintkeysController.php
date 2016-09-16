@@ -115,12 +115,15 @@ class PrintkeysController extends yiicomp\StockroomController {
             // If we're re-printing, we don't need to record the details
             // ---------------------------------------------------------------
             if ($unpurchasedOnly) {
-                $result = $this->flagPrintingKeys($stockitem_ids) ;
+                $result = $this->flagPrintingKeys($stockitem_ids);
+            } else {
+                $result = true;
             }
 
             if ($result === true) {
-                $keyPrinter = new printKeys($this->user->account, $this->viewPath) ;
-                return $keyPrinter->printKeys($stockitem_ids) ;
+                $keyPrinter = new printKeys($this->user->account, $this->viewPath);
+
+                return $keyPrinter->printKeys($stockitem_ids);
 
             } else {
                 $status = 404;
@@ -152,6 +155,7 @@ class PrintkeysController extends yiicomp\StockroomController {
 
         $emailer = new EmailKeys();
         $account = \common\models\Account::find()->where(['id' => $this->user->account_id])->one();
+
         return $emailer->markKeysDelivered($recipientDetails, $stockitem_ids, $account);
     }
 

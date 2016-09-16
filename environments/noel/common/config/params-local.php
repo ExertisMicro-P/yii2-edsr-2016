@@ -20,6 +20,8 @@ return [
     'account.copyAllEmailsTo'                        => ['edsr@crewe-it.co.uk'],
 
 
+    'fontLocation' => '/var/www/fonts/',
+    'fontFile'      => 'arial.ttf',
 
 
 ];

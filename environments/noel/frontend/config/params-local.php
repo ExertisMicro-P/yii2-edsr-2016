@@ -4,7 +4,7 @@ return [
     // -----------------------------------------------------------------------
     // TTF font directory and file name for the print keys module
     // -----------------------------------------------------------------------
-    'fontLocation' => '/Users/noelwalsh/Sites/metro/bups/20130510/apps-code/utils/dompdf-0.5.1/lib/fonts/',
+    'fontLocation' => '/var/www/fonts/',
     'fontFile'      => 'arial.ttf',
 ];
 

@@ -218,8 +218,9 @@ class PrintKeys {
             // -----------------------------------------------------------------------
             // Allocate the temporary file and write the image to it
             // -----------------------------------------------------------------------
-            $workImg = tempnam(Yii::getAlias('@frontend') . '/runtime/tmp', 'LEF') . '.jpg';
-            imagejpeg($leafletImage, $workImg);
+            $workImg = tempnam($this->workDir, 'LEF') ;
+            rename ($workImg, $workImg . '.jpg') ;
+            $workImg .= '.jpg' ;
 
 
             return Yii::$app->controller->renderPartial($view, [

@@ -91,7 +91,9 @@ class ProductLeafletInfo extends BaseModel
      */
     public function getLeafletImageFilename($siteArea = '@frontend') {
 
-        $workImg = tempnam(Yii::getAlias($siteArea) . '/runtime/tmp', 'LEF') . '.jpg';
+        $workImg = tempnam(Yii::getAlias($siteArea) . '/runtime/tmp', 'LEF') ;
+        rename ($workImg, $workImg . '.jpg');
+        $workImg .= '.jpg' ;
 
         $temp = fopen($workImg, 'w') ;
         fwrite($temp, $this->image_data) ;

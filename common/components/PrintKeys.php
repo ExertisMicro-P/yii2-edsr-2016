@@ -17,6 +17,9 @@ class PrintKeys {
     private $userEmail;
     private $defaultViewPath;
     private $viewPath;
+    private $account;
+    private $workDirRoot ;
+    private $workDir;
 
     /**
      * EmailKeys constructor.
@@ -28,7 +31,7 @@ class PrintKeys {
         $this->defaultViewPath = '@frontend/views/printkeys';
 
         if (!$viewpath) {
-            $viewpath = $this->defaultViewPath ;
+            $viewpath = $this->defaultViewPath;
         }
         $this->viewPath = $viewpath;
 
@@ -36,10 +39,22 @@ class PrintKeys {
         if (!(\Yii::$app instanceof yii\console\Application) && \Yii::$app->user) {
             $this->user      = Yii::$app->user->getIdentity();
             $this->userEmail = $this->user->email;
+            $this->account   = $this->user->account;
+            $this->workDirRoot = '@frontend' ;
 
         } else {
             $this->user      = null;
             $this->userEmail = '<system process>';
+            $this->workDirRoot = '@console' ;
+        }
+
+        $this->workDir   = Yii::getAlias($this->workDirRoot) . '/runtime/tmp';
+        if (!is_dir($this->workDir)) {
+            mkdir($this->workDir, 0600, true) ;
+        }
+
+        if ($account) {
+            $this->account = $account;
         }
     }
 
@@ -58,28 +73,13 @@ class PrintKeys {
         return $this->convertHtmlToPdf($html, $filename);
     }
 
-
-    /**
-     * PRODUCE KEY PDF
-     * ===============
-     *
-     * @param $stockitemIds
-     *
-     * @return mixed
-     */
-    public function produceKeyPdf($stockitemIds, $filename) {
-        $products = $this->findAllProducts($stockitemIds);
-        $html     = $this->printAllProducts($products);
-
-        return $this->producePdf($html, $filename);
-    }
-
-
     /**
      * FIND ALL PRODUCTS
      * =================
      * The printout is intend to use a view named after the partcode, so we
-     * read that. In doing do, we also verify that the purchase belongs to
+     * read that.
+     *
+     * For interactive use, we also verify that the purchase belongs to
      * the currently logged in account and silently ignore any that don't.
      *
      * @param $keys
@@ -87,14 +87,17 @@ class PrintKeys {
      * @return array
      */
     private function findAllProducts($keys) {
-        $stockItems = StockItem::find()
-                               ->select('stock_item.id, productcode, stockroom_id, eztorm_order_id, eztorm_product_id')// RCH 20160215 Added stockroom_id and eztorm_order_id to stop Reprint keys failing when we call DigitalPurchaser
-                               ->where(['stock_item.id' => $keys])
-                               ->joinWith('stockroom')
-                               ->joinWith('digitalProduct')
-                               ->joinWith('digitalProduct.productLeafletInfo')
-                               ->andWhere(['account_id' => $this->user->account_id])
-                               ->all();
+        $stockItemRs = StockItem::find()
+                                ->select('stock_item.id, productcode, stockroom_id, eztorm_order_id, eztorm_product_id')// RCH 20160215 Added stockroom_id and eztorm_order_id to stop Reprint keys failing when we call DigitalPurchaser
+                                ->where(['stock_item.id' => $keys])
+                                ->joinWith('stockroom')
+                                ->joinWith('digitalProduct')
+                                ->joinWith('digitalProduct.productLeafletInfo');
+        if ($this->account) {
+            $stockItemRs->andWhere(['account_id' => $this->account->id]);
+        }
+
+        $stockItems = $stockItemRs->all();
 
         $products = [];
 
@@ -111,7 +114,7 @@ class PrintKeys {
                 'leaflet'     => [
                     //                    'image'      => Yii::getAlias('@webroot') . '/' . Yii::$app->params['uploadPath'] . 'product_leaflets/' . $partcode . '/' . $sitem->digitalProduct->productLeafletInfo->image,
                     'image_type' => $sitem->digitalProduct->productLeafletInfo->image_type,
-                    'image'      => $sitem->digitalProduct->productLeafletInfo->getLeafletImageFilename(),
+                    'image'      => $sitem->digitalProduct->productLeafletInfo->getLeafletImageFilename($this->workDirRoot),
 
                     'key_xcoord'     => $sitem->digitalProduct->productLeafletInfo->key_xcoord,
                     'key_ycoord'     => $sitem->digitalProduct->productLeafletInfo->key_ycoord,
@@ -222,6 +225,7 @@ class PrintKeys {
             rename ($workImg, $workImg . '.jpg') ;
             $workImg .= '.jpg' ;
 
+            imagejpeg($leafletImage, $workImg);
 
             return Yii::$app->controller->renderPartial($view, [
                 'workImg' => $workImg
@@ -429,7 +433,8 @@ class PrintKeys {
      */
     private function addAccountLogoToLeaflet($leafletImage, $product) {
         if ($product['leaflet']['logo_box_width'] && $product['leaflet']['logo_box_height']) {
-            $accountLogo = $this->user->account->getAccountLogo();
+
+            $accountLogo = $this->account->getAccountLogo();
             if ($accountLogo) {
 
                 $accountLogo = Yii::getAlias('@webroot') . $accountLogo;
@@ -502,17 +507,17 @@ class PrintKeys {
 
         if ($filename) {
             $destination = Pdf::DEST_FILE;
+
         } else {
             $destination = Pdf::DEST_BROWSER;
             $filename    = '';
         }
-
         $pdf = new Pdf([
                            'mode'        => Pdf::MODE_CORE,
                            'format'      => 'A4',  //  Pdf::FORMAT_A4,
                            'orientation' => Pdf::ORIENT_PORTRAIT,
                            'methods'     => [
-                               'SetHeader' => ['Krajee Report Header'],
+                               'SetHeader' => ['Exertis Digital Product Key'],
                                'SetFooter' => ['{PAGENO}'],
                            ],
                            'content'     => $html,

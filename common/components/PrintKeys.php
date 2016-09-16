@@ -515,7 +515,7 @@ class PrintKeys {
                                'SetFooter' => ['{PAGENO}'],
                            ],
                            'content'     => $html,
-                           'cssFile'     => 'css/mindy.css',
+                           'cssFile'     => Yii::getAlias('@frontend') . '/views/printkeys/common/mindy.css',
 
                            'destination' => $destination,
                            'filename'    => $filename

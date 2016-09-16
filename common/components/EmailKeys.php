@@ -399,15 +399,15 @@ class EmailKeys {
             //return;
         }
 
+        $filename = $this->createKeyPdfs($selectedDetails, $account) ;
 
         $message = $mailer->compose('stockroom/orderedetails',
                                     compact("subject", "recipientDetails", "selectedDetails", "account"))
                           ->setTo([$recipientDetails['email'] => $recipientDetails['recipient']])
                           ->setBcc(Yii::$app->params['account.copyAllEmailsTo'])// RCH 20150420
-                          ->setSubject($subject) ;
+                          ->setSubject($subject)
+                          ->attach($filename);
 
-
-        $this->attachKeyPdfs($message, $selectedDetails) ;
 
         // check for messageConfig before sending (for backwards-compatible purposes)
         if (empty($mailer->messageConfig["from"])) {
@@ -415,6 +415,7 @@ class EmailKeys {
         }
         $result = $message->send();
 
+        unlink($filename) ;
 
         // restore view path and return result
         $mailer->viewPath = $oldViewPath;
@@ -422,33 +423,48 @@ class EmailKeys {
         return $result;
     }
 
-    private function attachKeyPdfs($message, $selectedDetails) {
-        $filename = $this->produceKeyPdf($selectedDetails) ;
+    /**
+     * CREATE KEY PDF
+     * ==============
+     * Allocates the file to hold the pdf, then creates the contents,
+     * finally returning the name
+     *
+     * @param $message
+     * @param $selectedDetails
+     * @param $account
+     */
+    private function createKeyPdfs($selectedDetails, $account) {
 
-        $message->attach($filename);
         $filename = tempnam($this->workDir, 'key') ;
 
-//        unlink($filename) ;
+        rename($filename, $filename . '.pdf') ;
+        $filename .= '.pdf' ;
 
+        $this->produceKeyPdf($selectedDetails, $account, $filename) ;
+
+        return $filename ;
     }
 
-    private function produceKeyPdf($selectedDetails) {
-
-        $filename = tempnam(Yii::getAlias('@frontend') . '/runtime/tmp', 'key') ;
+    /**
+     * PRODUCE KEY PDF
+     * ===============
+     * Actually builds the pdf for all selected keys
+     *
+     * @param $selectedDetails
+     * @param $account
+     * @param $filename
+     */
+    private function produceKeyPdf($selectedDetails, $account, $filename) {
 
         $stockCodes = [] ;
-        foreach ($selectedDetails as $selectedItem) {
-            foreach ($selectedItem as $code => $details) {
-                foreach ($details['keyItems'] as $stockCode => $key) {
-                    $stockCodes[] = $stockCode ;
-                }
+        foreach ($selectedDetails['codes'] as $code => $details) {
+            foreach ($details['keyItems'] as $stockCode => $key) {
+                $stockCodes[] = $stockCode ;
             }
         }
 
-        $keyPrinter = new printKeys() ;
+        $keyPrinter = new printKeys($account) ;
         $keyPrinter->printKeys($stockCodes, $filename) ;
-
-        return $filename ;
     }
 
 }

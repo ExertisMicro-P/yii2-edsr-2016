@@ -63,6 +63,9 @@ define(["text!./login.html", 'utils'], function(homeTemplate) {
             read : function () {
                 //var emailRegex = /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
                 var emailRegex = /^(([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+)|([A-Za-z_0-9!"£$%\^&*(){}@~#?]+)/;
+                emailRegex = /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/ ;
+                                // `        Just to reset syntax highlighting
+
                 if ($.trim(self.userName()).length > 0) {
                     self.userNameOk(emailRegex.test(self.userName())) ;
 
@@ -71,7 +74,7 @@ define(["text!./login.html", 'utils'], function(homeTemplate) {
                     //        self.userNameOk(result == 'ok')
                     //    })
                 }
-                return (self.userName() != '');
+                return (self.userName() != '' && self.userNameOk());
             },
             write: function (value) {
 

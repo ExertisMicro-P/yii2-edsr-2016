@@ -444,7 +444,7 @@ class Account extends \yii\db\ActiveRecord {
                     $codes[] = $detail['orderdetails']->stock_item_id;
                 }
                 if (count($codes)) {
-                    $emailer->completeEmailOrder($recipientDetails, $codes, $this);
+                    $emailer->completeEmailOrder($recipientDetails, $codes, $this, $dse->brand);
 
                     $this->buildAsnCSVFile($poKey, $dse->email, $details) ;
                 }

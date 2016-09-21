@@ -37,7 +37,7 @@ class EmailKeys {
             $this->workDir   = Yii::getAlias('@console') . '/runtime/tmp';
         }
         if (!is_dir($this->workDir)) {
-            mkdir($this->workDir, 0600, true) ;
+            mkdir($this->workDir, 0600, true);
         }
     }
 
@@ -57,7 +57,7 @@ class EmailKeys {
      * @return array|StockroomController|mixed|string|static
      * @throws \Exception
      */
-    public function completeEmailOrder($recipientDetails, $selectedItems, $account) {
+    public function completeEmailOrder($recipientDetails, $selectedItems, $account, $brand = null) {
 
         \Yii::info(__METHOD__ . ': $recipientDetails=' . print_r($recipientDetails, true));
         \Yii::info(__METHOD__ . ': $selectedItems=' . print_r($selectedItems, true));
@@ -66,7 +66,7 @@ class EmailKeys {
         list($result, $selectedDetails) = $this->markKeysAsProcessed($recipientDetails, $selectedItems, $account);
 
         if ($result === true) {
-            $result = $this->sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $account);
+            $result = $this->sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $account, $brand);
         }
 
         return $result;
@@ -85,13 +85,13 @@ class EmailKeys {
      *
      * @return mixed
      */
-    public function reEmailKeys($recipientDetails, $selectedItems, $account) {
+    public function reEmailKeys($recipientDetails, $selectedItems, $account, $brand = null) {
 
         \Yii::info(__METHOD__ . ': $recipientDetails=' . print_r($recipientDetails, true));
         \Yii::info(__METHOD__ . ': $selectedItems=' . print_r($selectedItems, true));
         \Yii::info(__METHOD__ . ': $account=' . print_r($account->attributes, true));
 
-        $result = $this->sendOrderEmailToCustomer($recipientDetails, $selectedItems, $account);
+        $result = $this->sendOrderEmailToCustomer($recipientDetails, $selectedItems, $account, $brand);
 
         return $result;
     }
@@ -108,11 +108,11 @@ class EmailKeys {
      *
      * @return array
      */
-    public function saveEmailedOrderDetails($recipientDetails, &$selectedItems, $account) {
+    public function saveEmailedOrderDetails($recipientDetails, &$selectedItems, $account, $brand) {
         \Yii::info(__METHOD__ . ': $recipientDetails=' . print_r($recipientDetails, true));
         \Yii::info(__METHOD__ . ': $selectedItems=' . print_r($selectedItems, true));
 
-        return $this->sendOrderEmailToCustomer($recipientDetails, $selectedItems, $account);
+        return $this->sendOrderEmailToCustomer($recipientDetails, $selectedItems, $account, $brand);
     }
 
     /**
@@ -355,6 +355,7 @@ class EmailKeys {
 
             $selectedDetails['codes'][$stockItem['productcode']]['description']              = $stockItem->description;
             $selectedDetails['codes'][$stockItem['productcode']]['faqs']                     = $stockItem->digitalProduct->faqs;
+            $selectedDetails['codes'][$stockItem['productcode']]['downloadUrl']              = $stockItem->getDownloadURL();
             $selectedDetails['codes'][$stockItem['productcode']]['keyItems'][$stockItem->id] = $productKey;
         }
 
@@ -373,14 +374,18 @@ class EmailKeys {
      * @param                               $recipientDetails
      * @param                               $selectedCounts
      * @param                               $account Account so we can include things like accountLogo
+     * @param                               $brand   Brand name (e.g., littlewoods, very) to allow customisation
      *
      * @return mixed
      */
-    private function sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $account) {
+    private function sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $account, $brand) {
 
         $mailer           = Yii::$app->mailer;
         $oldViewPath      = $mailer->viewPath;
         $mailer->viewPath = '@common/mail';
+        $templateName     = $this->findEmailTemplate($mailer, $account, $brand);
+
+        list($individualEmails, $includePdfs) = $this->checkEmailOptions($templateName);
 
         $subject = 'Exertis Digital Stock Room: ' . Yii::t("user", "Order Details for " . $recipientDetails['orderNumber']); // RCH orderNumber is actually just an arbitrary ref entered by the user
 
@@ -399,23 +404,14 @@ class EmailKeys {
             //return;
         }
 
-        $filename = $this->createKeyPdfs($selectedDetails, $account) ;
 
-        $message = $mailer->compose('stockroom/orderedetails',
-                                    compact("subject", "recipientDetails", "selectedDetails", "account"))
-                          ->setTo([$recipientDetails['email'] => $recipientDetails['recipient']])
-                          ->setBcc(Yii::$app->params['account.copyAllEmailsTo'])// RCH 20150420
-                          ->setSubject($subject)
-                          ->attach($filename);
+        if ($individualEmails) {
+            $result = $this->sendEmailPerItem($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $selectedDetails, $account);
 
-
-        // check for messageConfig before sending (for backwards-compatible purposes)
-        if (empty($mailer->messageConfig["from"])) {
-            $message->setFrom(Yii::$app->params["adminEmail"]);
+        } else {
+            $result = $this->sendEmail($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $selectedDetails, $account);
         }
-        $result = $message->send();
 
-        unlink($filename) ;
 
         // restore view path and return result
         $mailer->viewPath = $oldViewPath;
@@ -424,25 +420,224 @@ class EmailKeys {
     }
 
     /**
+     * CHECK EMAIL OPTIONS
+     * ===================
+     * Examines the template name for a suffix to indicate if it only accepts
+     * a single item from the order, an whether or not the pdf version should be
+     * appended.
+     *
+     * @param $templateName
+     *
+     * @return array
+     */
+    private function checkEmailOptions($templateName) {
+        $individualItems = false;
+        $includePdfs     = false;
+
+        $options = strrchr($templateName, '.');
+        if ($options) {
+            $options = substr($options, 1);
+            echo "\nOPTIONS $options\n";
+
+            if (strpos($options, ':')) {
+                $options = explode(':', $options);
+            } else {
+                $options = [$options];
+            }
+            $individualItems = in_array('one', $options);
+            $includePdfs     = in_array('pdfs', $options);
+        }
+
+        return [$individualItems, $includePdfs];
+
+    }
+
+    /**
+     * SEND EMAIL PER ITEM
+     * ===================
+     * This is used where an individual email is to be sent for each item on a
+     * purchase order. It iterates over the actual contents, creating the data
+     * structure required by the standard email send mthod
+     *
+     * @param $mailer
+     * @param $includePdfs
+     * @param $subject
+     * @param $templateName
+     * @param $recipientDetails
+     * @param $selectedDetails
+     * @param $account
+     *
+     * @return bool
+     */
+    private function sendEmailPerItem($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $selectedDetails, $account) {
+        $result = true;
+
+        foreach ($selectedDetails['codes'] as $productCode => $details) {
+            // ---------------------------------------------------------------
+            // First, copy the basic details related to this product
+            // ---------------------------------------------------------------
+            $emailData = [
+                'codes' => [
+                    $productCode => [
+                        'description' => $details['description'],
+                        'downloadUrl' => isset($details['downloadUrl']) ? $details['downloadUrl'][0] : null,
+                        'keyItems'    => []
+                    ]
+                ]
+            ];
+            // ---------------------------------------------------------------
+            // Mow append each key in turn, then send an email
+            // ---------------------------------------------------------------
+            foreach ($details['keyItems'] as $keyId => $productKey) {
+                $emailData['codes'][$productCode]['keyItems'][$keyId] = $productKey;
+
+                if (!$this->sendEmail($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $emailData, $account)) {
+                    $result = false;
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * SEND EMAIL
+     * ==========
+     * This will build and send teh key details email using the provided data.
+     * This must be in the format
+     *  $emailData [
+     *      'codes'     [
+     *          'description'   => ''
+     *          'downloadUrl    => [url url, url]               Optional
+     *          'keyItems'      => [key, key, key]
+     *          'faqs'          => ''
+     *      ]
+     * ]
+     *
+     * If includePdfs is true, a pdf version of the key will be created and
+     * attached to the email
+     *
+     * @param $mailer
+     * @param $subject
+     * @param $templateName
+     * @param $recipientDetails
+     * @param $emailData
+     * @param $account
+     *
+     * @return mixed
+     */
+    private function sendEmail($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $emailData, $account) {
+
+        echo "\nEMAILDATA  $includePdfs \n";
+        print_r($emailData);
+
+        $message = $mailer->compose($templateName . '.php',
+                                    compact("subject", "recipientDetails", "emailData", "account"))
+                          ->setTo([$recipientDetails['email'] => $recipientDetails['recipient']])
+                          ->setBcc(Yii::$app->params['account.copyAllEmailsTo'])// RCH 20150420
+                          ->setSubject($subject);
+        if ($includePdfs) {
+            $filename = $this->createKeyPdfs($emailData, $account);
+            $message->attach($filename);
+        }
+
+
+        // check for messageConfig before sending (for backwards-compatible purposes)
+        if (empty($mailer->messageConfig["from"])) {
+            $message->setFrom(Yii::$app->params["adminEmail"]);
+        }
+        $result = $message->send();
+
+        if ($includePdfs) {
+            unlink($filename);
+        }
+
+        return $result;
+    }
+
+    /**
+     * FIND EMAIL TEMPLATE
+     * ===================
+     * This checks for account and brand specific email templates in the
+     * mailer viewpath, returning the name of the most specific found.
+     *
+     * @param $mailer
+     * @param $account
+     * @param $brand
+     *
+     * @return string
+     */
+    private function findEmailTemplate($mailer, $account, $brand) {
+//        return 'stockroom/orderedetails.pdfs';
+
+        $basePath = Yii::getAlias($mailer->viewPath);
+        if (substr($basePath, -1, 1) <> '/') {
+            $basePath .= '/';
+        }
+
+        $possibleName = 'stockroom/email_' . $account->customer_exertis_account_number;
+        $matches      = [];
+
+        // -------------------------------------------------------------------
+        // Check first for any variation of a file with the brand
+        // -------------------------------------------------------------------
+        if ($brand) {
+            $filenameMask = $basePath . $possibleName . '_' . $brand . '\.*.php';
+            $matches      = glob($filenameMask);
+        }
+
+        // -------------------------------------------------------------------
+        // If no match, check for the account number followed by options
+        // -------------------------------------------------------------------
+        if (!$matches || count($matches) == 0) {
+            $filenameMask = $basePath . $possibleName . '\.*.php';
+            $matches      = glob($filenameMask);
+        }
+
+        // -------------------------------------------------------------------
+        // If still no match, check for just the account number
+        // -------------------------------------------------------------------
+        if (!$matches || count($matches) == 0) {
+            $filenameMask = $basePath . $possibleName . '.php';
+            $matches      = glob($filenameMask);
+        }
+
+        // -------------------------------------------------------------------
+        // If we found a match, return it after stripping the full path and
+        //teh php extension (and then pre-pending 'stockroom/')
+        // -------------------------------------------------------------------
+        if ($matches && count($matches)) {
+            return 'stockroom/' . basename($matches[0], '.php');
+        }
+
+        // -------------------------------------------------------------------
+        // Neither found, so return the default
+        // -------------------------------------------------------------------
+        return 'stockroom/orderedetails.pdfs';
+    }
+
+
+    /**
      * CREATE KEY PDF
      * ==============
      * Allocates the file to hold the pdf, then creates the contents,
      * finally returning the name
      *
-     * @param $message
      * @param $selectedDetails
      * @param $account
+     *
+     * @return string
      */
     private function createKeyPdfs($selectedDetails, $account) {
 
-        $filename = tempnam($this->workDir, 'key') ;
+        $filename = tempnam($this->workDir, 'key');
 
-        rename($filename, $filename . '.pdf') ;
-        $filename .= '.pdf' ;
+        rename($filename, $filename . '.pdf');
+        $filename .= '.pdf';
 
-        $this->produceKeyPdf($selectedDetails, $account, $filename) ;
+        $this->produceKeyPdf($selectedDetails, $account, $filename);
 
-        return $filename ;
+        return $filename;
     }
 
     /**
@@ -456,15 +651,15 @@ class EmailKeys {
      */
     private function produceKeyPdf($selectedDetails, $account, $filename) {
 
-        $stockCodes = [] ;
+        $stockCodes = [];
         foreach ($selectedDetails['codes'] as $code => $details) {
             foreach ($details['keyItems'] as $stockCode => $key) {
-                $stockCodes[] = $stockCode ;
+                $stockCodes[] = $stockCode;
             }
         }
 
-        $keyPrinter = new printKeys($account) ;
-        $keyPrinter->printKeys($stockCodes, $filename) ;
+        $keyPrinter = new printKeys($account);
+        $keyPrinter->printKeys($stockCodes, $filename);
     }
 
 }

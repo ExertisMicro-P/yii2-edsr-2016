@@ -445,11 +445,122 @@ class Account extends \yii\db\ActiveRecord {
                 }
                 if (count($codes)) {
                     $emailer->completeEmailOrder($recipientDetails, $codes, $this);
+
+                    $this->buildAsnCSVFile($poKey, $dse->email, $details) ;
                 }
             }
         }
 
         return $result;
+    }
+
+    /**
+     * BUILD ASN CSV FILE
+     * ==================
+     * Creates and saves a csv file containing the detaisl of each tiem processed
+     * in the passed order.
+     *
+     * @param $deliveryName
+     * @param $details
+     *
+     * @return string
+     *
+     */
+    private function buildAsnCSVFile($po, $deliveryName, $details) {
+
+        $asnData = $this->prepareOrderDetailsForCSV($po, $deliveryName, $details) ;
+
+        $csvFileName = $this->createAsnFileName($po) ;
+        $fp = fopen($csvFileName ,'w') ;
+
+        // -------------------------------------------------------------------
+        // Start with a header row from the array keys
+        // -------------------------------------------------------------------
+        fputcsv($fp, array_keys($asnData[0])) ;
+
+        // -------------------------------------------------------------------
+        // Now append each data row.
+        // -------------------------------------------------------------------
+        foreach ($asnData as $row) {
+            fputcsv($fp, $row);
+        }
+        fclose($fp) ;
+        return $csvFileName ;
+    }
+
+    /**
+     * PREPARE ORDER DETAILS FOR CSV
+     * =============================
+     * This iterates over the passed order items, building an associative array,
+     * which can then be written to a csv file, using the keys as the header row.
+     *
+     * @param $po
+     * @param $deliveryName
+     * @param $details
+     *
+     * @return array
+     */
+    private function prepareOrderDetailsForCSV($po, $deliveryName, $details) {
+        $asnData = [] ;
+
+        foreach ($details as $detail) {
+            $orderDetails = $detail['orderdetails'];
+            $stockItem    = $orderDetails->stockitem;
+
+            $asnData[] = [
+                'Customer code'            => '',
+                'Customer order reference' => $po,
+                'Dispatch date'            => $stockItem->timestamp_added,
+                'Oracle order number'      => $orderDetails->sop,
+                'Delivery name'            => $deliveryName,
+                'Delivery location code'   => '',
+                'Delivery address line 1'  => 'Digital Product',
+                'Delivery address line 2'  => 'Digital Product',
+                'Delivery address line 3'  => 'Digital Product',
+                'Delivery town'            => 'Digital Product',
+                'Delivery county'          => 'Digital Product',
+                'Delivery postcode'        => 'RG24 8EH',
+                'Our part code'            => $stockItem->productcode,
+                'Customer part code'       => '',
+                'Shipped quantity'         => 1,
+                'Customer line number'     => '',
+                'Manufacturers part code'  => '',
+                'Price'                    => '',
+                'Oracle invoice number'    => ''
+            ];
+        }
+        return $asnData ;
+    }
+
+
+    /**
+     * CREATE ASN FILENAME
+     * ===================
+     * This is passed a purchase order string and uses it to format the correct
+     * name for the ASN file to be sent to EDI.
+     *
+     * It relies on a PARAMS setting, so checks it was set, and also creates
+     * the path it if doesn't already exist
+     *
+     * @param $po
+     *
+     * @return string
+     */
+    private function createAsnFileName($po) {
+        if (!array_key_exists('account.dropshipDirectory', Yii::$app->params)) {
+            die('You need to configure the setting for account.dropshipDirectory') ;
+        }
+
+        $csvFileDirectory = Yii::$app->params['account.dropshipDirectory'];
+        $csvFileDirectory = Yii::getAlias($csvFileDirectory) ;
+        if (substr($csvFileDirectory, -1, 1) <> '/') {
+            $csvFileDirectory .= '/' ;
+        }
+        if (!is_dir($csvFileDirectory)) {
+            mkdir($csvFileDirectory, 0600, true) ;
+        }
+
+        return $csvFileDirectory. $po . '.csv' ;
     }
 
 
@@ -502,7 +613,6 @@ class Account extends \yii\db\ActiveRecord {
         $customer   = $account->customer;
 
         $email = $account->findMainUser()->email;
-        $email = 'noel@crewe-it.co.uk';
 
         $subject = 'Exertis Digital Stock Room: ' . Yii::t("app", "Account") . ' ' . $accountNum . ' ' . $customer->name . ' stock item available';
         $message = $mailer->compose('stockItemCreatedEmail', compact("subject", "account", "selectedDetails"))

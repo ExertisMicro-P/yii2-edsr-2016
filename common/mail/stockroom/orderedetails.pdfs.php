@@ -54,8 +54,8 @@ use yii\helpers\Html;
                 <TR>
                     <TH>Product&nbsp;Code&nbsp;&nbsp;</TH><TH>Description</TH>
                 </TR>
-                
-    <?php foreach ($selectedDetails['codes'] as $productCode => $details) { ?>
+
+    <?php foreach ($emailData['codes'] as $productCode => $details) { ?>
                 <TR>
                     <TD><?= $productCode ?></TD><TD><?= $details['description'] ?></TD>
                 </TR>
@@ -69,14 +69,24 @@ use yii\helpers\Html;
                 </TR>
 
         <?php } ?>
-                <?php 
+                <?php
                 if (isset($details['downloadUrl'])) {
-                    foreach($details['downloadUrl'] as $download){ ?>
-                    <TR>
-                        <TD>Download URL:</TD>
-                        <TD><?=$download?></TD>
-                    </TR>
-                <?php } 
+                    if (is_array($details['downloadUrl'])) {
+                        foreach ($details['downloadUrl'] as $download) { ?>
+                            <TR>
+                                <TD>Download URL:</TD>
+                                <TD><?= $download ?></TD>
+                            </TR>
+                        <?php }
+                    } else {                // if is_array
+?>
+                        <TR>
+                            <TD>Download URL:</TD>
+                            <TD><?= $details['downloadUrl'] ?></TD>
+                        </TR>
+<?php
+
+                    }
                 } // if
                 ?>
                 <TR>

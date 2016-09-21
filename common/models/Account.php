@@ -560,7 +560,7 @@ class Account extends \yii\db\ActiveRecord {
             mkdir($csvFileDirectory, 0600, true) ;
         }
 
-        return $csvFileDirectory. $po . '.csv' ;
+        return "{$csvFileDirectory}ASN-{$this->customer_exertis_account_number}-$po.csv" ;
     }
 
 

@@ -397,7 +397,8 @@ class Account extends \yii\db\ActiveRecord {
         foreach ($selectedDetails['pos'] as $poKey => $details) {
             $poData['pos'] = [] ;
             $poData['pos'][$poKey] = $details ;
-
+            $poData['showkeys'] = $selectedDetails['showkeys'] ;
+            
             if (!$this->sendEmailWithAllKeys($poData)) {
                 $result = false;
                 break;

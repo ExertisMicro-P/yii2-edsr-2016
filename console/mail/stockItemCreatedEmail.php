@@ -151,10 +151,10 @@ $totalKeysMessage = Yii::t('app', $totalKeys . ' {totalkeys, plural, =0{No new k
             foreach ($selectedDetails['pos'] as $purchaseOrderNumber => $po) {
                 foreach ($po as $dataitem) { ?>
 
-                    <TABLE border=0 cellSpacing=0 cellPadding=0 class="stockitem">
+                    <TABLE border=0 cellSpacing=0 cellPadding=0 class="stockitem" width="100%">
                         <thead>
                         <TR>
-                            <th></th>
+                            <th>&nbsp;</th>
                             <th>Your PO</th>
                             <th>Our Order</th>
                             <th>Our Partcode</th>

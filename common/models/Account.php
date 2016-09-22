@@ -392,15 +392,16 @@ class Account extends \yii\db\ActiveRecord {
      */
     private function sendEmailPerPO($selectedDetails) {
         $result = true;
+        $poData['account'] = $selectedDetails['account'] ;
 
         foreach ($selectedDetails['pos'] as $poKey => $details) {
-            $codes = [];
+            $poData['pos'] = [] ;
+            $poData['pos'][$poKey] = $details ;
 
-            foreach ($details as $detail) {
-                $item = Stockitem::findOne($detail['orderdetails']->stock_item_id);
-                array_push($codes, $item->key);
+            if (!$this->sendEmailWithAllKeys($poData)) {
+                $result = false;
+                break;
             }
-
         }
 
         return $result;

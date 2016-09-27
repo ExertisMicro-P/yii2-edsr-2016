@@ -675,20 +675,19 @@ class EmailKeys {
     private function scanDirectoryForTemplate($fullDirectory, $possibleNames) {
 
         $matches      = [];
+        $dir = new \DirectoryIterator($fullDirectory) ;
+
         foreach ($possibleNames as $possibleName) {
-            $filenameMask = $fullDirectory . 'email' . $possibleName ;
-            if ($possibleName <> '') {
-                $filenameMask .= '\.*.php';
-            } else {
-                $filenameMask .= '\.php' ;
-            }
-            $matches      = glob($filenameMask);
+            $fileNameMask = "/^email$possibleName(.*?).php/" ;
+            $iterator = new \RegexIterator($dir, $fileNameMask, \RegexIterator::MATCH);
 
             // -------------------------------------------------------------------
             // If we found a match, return just name, minus the extension
             // -------------------------------------------------------------------
-            if ($matches && count($matches)) {
-                return basename($matches[0], '.php');
+            foreach($iterator as $fileinfo) {
+                if (!$fileinfo->isDot()) {
+                    return $fileinfo->getBasename('.php') ;
+                }
             }
         }
         return false ;

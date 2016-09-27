@@ -47,9 +47,9 @@ if (is_array($downloadUrl)) {
             font-size: 100% !important;
         }
 
-        #outlook a {
-            padding: 0;
-        }
+        #outlook a {padding:0;}
+        .AOLcolor a {color:#484442; text-decoration:underline;}
+        .Outlookcolor a {color:#837F7C; text-decoration:none;}
 
         @media screen and (min-width: 640px) {
             .Width640 {
@@ -276,7 +276,7 @@ if (is_array($downloadUrl)) {
                                         <tr>
                                             <td align="center" valign="middle"
                                                 style="font-family:arial,helvetica,sans-serif; font-size:26px; color:#7FBA23"
-                                                class="fontSize">Thanks for your order!
+                                                class="fontSize">Your Microsoft Office is here. Download now!
                                             </td>
                                         </tr>
                                         <tr>
@@ -320,7 +320,7 @@ if (is_array($downloadUrl)) {
         <td height="10" style="font-size:0px;line-height:0px">&nbsp;</td>
     </tr>
 </table>
-<table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" bgcolor="#F3F3F3">
+<table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" bgcolor="#F3F3F3" class="hideContent">
     <tr>
         <td align="center" valign="middle">
             <!--[if (mso)|(IE)]>
@@ -339,12 +339,11 @@ if (is_array($downloadUrl)) {
                             <td width="1" align="left" valign="middle" bgcolor="#CCCCCC"><img
                                         src="http://wpm.ccmp.eu/wpm/100104/ContentUploads/PixelSpacer16.jpg" width="1"
                                         height="1" border="0" style="display:block"/></td>
-                            <td align="center" valign="middle"><a
-                                        href="http://ao.com/?WT.z_PT=MDA&WT.z_MT=Retention&WT.z_RTM=Email&WT.z_EMT=transactional&WT.z_EMN=ESD&WT.srch=1"><img
-                                            src="http://wpm.ccmp.eu/wpm/100104/ContentUploads/ESDHeaderImg.jpg"
-                                            width="638" class="imgWidth"
+                            <td align="center" valign="middle"><a href="https://www.office.com/myaccount"><img
+                                            src="http://wpm.ccmp.eu/wpm/100104/ContentUploads/ESDHeaderImg.jpg" width="638"
                                             style="display:block; max-width:638px !important" border="0"
-                                            alt="Thanks for your order!" title="Thanks for your order!"/></a></td>
+                                            alt="Download your software" title="Download your software" class="imgWidth"/></a>
+                            </td>
                             <td width="1" align="right" valign="middle" bgcolor="#CCCCCC"><img
                                         src="http://wpm.ccmp.eu/wpm/100104/ContentUploads/PixelSpacer16.jpg" width="1"
                                         height="1" border="0" style="display:block"/></td>
@@ -364,7 +363,7 @@ if (is_array($downloadUrl)) {
             <![endif]--></td>
     </tr>
 </table>
-<table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" bgcolor="#F3F3F3">
+<table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" bgcolor="#F3F3F3" class="hideContent">
     <tr>
         <td height="10" style="font-size:0px;line-height:0px">&nbsp;</td>
     </tr>
@@ -402,214 +401,109 @@ if (is_array($downloadUrl)) {
                                         <tr>
                                             <td align="left" valign="middle" class="center hidePad"
                                                 style="padding-left:10px; padding-right:10px; color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%">
-                                                Start using your software right away with one easy download. Simply
-                                                follow the steps below and you'll be up and running in no time.
+                                                Thanks for buying Microsoft Office from <a
+                                                        href="http://ao.com/?WT.z_PT=MDA&WT.z_MT=Retention&WT.z_RTM=Email&WT.z_EMT=transactional&WT.z_EMN=ESD&WT.srch=1"
+                                                        style="color:#484442; text-decoration:none">ao.com</a>. To download
+                                                your software, you'll need to go to the Microsoft site. Simply follow
+                                                the 5 steps below and Microsoft Office will be ready to use in no time.
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td align="left" valign="middle"
-                                                style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:18px; padding-top:20px; padding-left:10px"
-                                                class="center"><strong>What to do next</strong></td>
+                                            <td>&nbsp;</td>
                                         </tr>
                                         <tr>
-                                            <td align="center" valign="top"><!--[if (mso)|(IE)]>
-                                                <table border="0" cellspacing="0" cellpadding="0" width="638"
-                                                       align="center">
+                                            <td align="left" valign="middle"
+                                                style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:18px; padding-left:10px; padding-right:10px"
+                                                class="center hidePad"><strong>5 simple steps to download. Get
+                                                    started...</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>&nbsp;</td>
+                                        </tr>
+                                        <tr>
+                                            <td align="left"
+                                                valign="middle"
+                                                style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; padding-left:10px; padding-right:10px"
+                                                class="center hidePad"><strong>1.</strong> Highlight and copy this code.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td height="10" style="font-size:0px;line-height:0px">&nbsp;</td>
+                                        </tr>
+                                        <tr>
+                                            <td align="left" valign="middle"
+                                                style="padding-left:10px; padding-right:10px" class="center hidePad">
+                                                <table width="280" border="0" align="left" cellpadding="0"
+                                                       cellspacing="0" class="center deviceWidth2">
                                                     <tr>
-                                                        <td align="center" valign="top" width="638"><![endif]-->
-                                                <table width="100%" border="0" align="center" cellpadding="0"
-                                                       cellspacing="0" class="Width638" style="max-width:638px">
-                                                    <tr>
-                                                        <td align="center" valign="top"><!--[if (mso)|(IE)]>
-                                                            <table border="0" cellspacing="0" cellpadding="0"
-                                                                   width="319" align="left">
-                                                                <tr>
-                                                                    <td align="center" valign="top" width="319">
-                                                            <![endif]-->
-                                                            <table width="319" border="0" align="left" cellpadding="0"
-                                                                   cellspacing="0" class="center deviceWidth">
-                                                                <tr>
-                                                                    <td align="center" valign="top">
-                                                                        <table width="100%" border="0" align="center"
-                                                                               cellpadding="0" cellspacing="0">
-                                                                            <tr>
-                                                                                <td width="10">&nbsp;</td>
-                                                                                <td align="center" valign="top">
-                                                                                    <table width="100%" border="0"
-                                                                                           align="center"
-                                                                                           cellpadding="0"
-                                                                                           cellspacing="0">
-                                                                                        <tr>
-                                                                                            <td height="10"
-                                                                                                style="font-size:0px;line-height:0px">
-                                                                                                &nbsp;</td>
-                                                                                        </tr>
-                                                                                        <tr>
-                                                                                            <td align="left"
-                                                                                                valign="middle"
-                                                                                                style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%; padding-top:10px; padding-bottom:10px"
-                                                                                                class="center"><strong>1.</strong>
-                                                                                                Highlight and copy this
-                                                                                                code.
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                        <tr>
-                                                                                            <td align="left"
-                                                                                                valign="middle">
-                                                                                                <table width="280"
-                                                                                                       border="0"
-                                                                                                       align="left"
-                                                                                                       cellpadding="0"
-                                                                                                       cellspacing="0"
-                                                                                                       class="center deviceWidth2">
-                                                                                                    <tr>
-                                                                                                        <td align="left"
-                                                                                                            valign="middle"
-                                                                                                            style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%; padding-top:10px; padding-bottom:10px; padding-left:10px"
-                                                                                                            class="center"
-                                                                                                            bgcolor="#F3F3F3">
-                                                                                                            <strong>
-                                                                                                                <?= $productKey ?>
-                                                                                                                <br/>
-                                                                                                            </strong>
-                                                                                                        </td>
-                                                                                                    </tr>
-                                                                                                </table>
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                        <?php if ($downloadUrl) { ?>
-                                                                                            <tr>
-                                                                                                <td align="left"
-                                                                                                    valign="middle"
-                                                                                                    style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%; padding-top:20px; padding-bottom:10px"
-                                                                                                    class="center">
-                                                                                                    <strong>2.</strong>
-                                                                                                    Click this link.
-                                                                                                </td>
-                                                                                            </tr>
-                                                                                            <tr>
-                                                                                                <td align="left"
-                                                                                                    valign="middle">
-                                                                                                    <table width="200"
-                                                                                                           border="0"
-                                                                                                           align="left"
-                                                                                                           cellpadding="0"
-                                                                                                           cellspacing="0"
-                                                                                                           bgcolor="#7FBA23"
-                                                                                                           class="center">
-                                                                                                        <tr>
-                                                                                                            <td width="150"
-                                                                                                                height="40"
-                                                                                                                align="left"
-                                                                                                                valign="middle"
-                                                                                                                style="font-family:Arial, Helvetica, sans-serif; font-size:16px; color:#FFFFFF; font-weight:bold; padding-left:20px">
-                                                                                                                <a href="<?= $downloadUrl ?>"
-                                                                                                                   style="text-decoration:none; color:#FFFFFF; display:block; width:100%; line-height:40px">Download
-                                                                                                                    now</a>
-                                                                                                            </td>
-                                                                                                            <td width="50"
-                                                                                                                height="40"
-                                                                                                                align="center"
-                                                                                                                valign="middle">
-                                                                                                                <a href="#"
-                                                                                                                   style="line-height:40px"><img
-                                                                                                                            src="http://wpm.ccmp.eu/wpm/100104/ContentUploads/CTA-Arrow-White001.fw.png"
-                                                                                                                            width="10"
-                                                                                                                            height="16"
-                                                                                                                            style="line-height:40px"
-                                                                                                                            border="0"/></a>
-                                                                                                            </td>
-                                                                                                        </tr>
-                                                                                                    </table>
-                                                                                                </td>
-                                                                                            </tr>
-                                                                                        <?php } // if $downloadUrl ?>
-                                                                                    </table>
-                                                                                </td>
-                                                                                <td width="10">&nbsp;</td>
-                                                                            </tr>
-                                                                        </table>
-                                                                    </td>
-                                                                </tr>
-                                                            </table>
-                                                            <!--[if (mso)|(IE)]>
-                                                            </td>
-                                                            </tr>
-                                                            </table>
-                                                            </td>
-                                                            <td>
-                                                                <table border="0" cellspacing="0" cellpadding="0"
-                                                                       width="319" align="left">
-                                                                    <tr>
-                                                                        <td align="center" valign="top" width="319">
-                                                            <![endif]-->
-                                                            <table width="319" border="0" align="left" cellpadding="0"
-                                                                   cellspacing="0" class="center deviceWidth">
-                                                                <tr>
-                                                                    <td align="center" valign="top">
-                                                                        <table width="100%" border="0" align="left"
-                                                                               cellpadding="0" cellspacing="0"
-                                                                               bgcolor="#FFFFFF" class="center"
-                                                                               style="mso-table-lspace:0;mso-table-rspace:0;max-width:319px;">
-                                                                            <tr>
-                                                                                <td width="10">&nbsp;</td>
-                                                                                <td align="center" valign="top">
-                                                                                    <table width="100%" border="0"
-                                                                                           align="center"
-                                                                                           cellpadding="0"
-                                                                                           cellspacing="0">
-                                                                                        <tr>
-                                                                                            <td height="10"
-                                                                                                style="font-size:0px;line-height:0px">
-                                                                                                &nbsp;</td>
-                                                                                        </tr>
-                                                                                        <tr>
-                                                                                            <td align="left"
-                                                                                                valign="middle"
-                                                                                                style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%; padding-top:10px; padding-bottom:10px"
-                                                                                                class="center"><strong>3.</strong>
-                                                                                                Register or sign in to
-                                                                                                your Microsoft account.
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                        <tr>
-                                                                                            <td align="left"
-                                                                                                valign="middle"
-                                                                                                style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%; padding-top:10px; padding-bottom:10px"
-                                                                                                class="center"><strong>4.</strong>
-                                                                                                Click 'My Account' and
-                                                                                                hit 'Redeem'.
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                        <tr>
-                                                                                            <td align="left"
-                                                                                                valign="middle"
-                                                                                                style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%; padding-top:10px"
-                                                                                                class="center"><strong>5.</strong>
-                                                                                                Paste in your code and
-                                                                                                click confirm.
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                    </table>
-                                                                                </td>
-                                                                                <td width="10">&nbsp;</td>
-                                                                            </tr>
-                                                                        </table>
-                                                                    </td>
-                                                                </tr>
-                                                            </table>
-                                                            <!--[if (mso)|(IE)]>
-                                                            </td>
-                                                            </tr>
-                                                            </table>
-                                                            <![endif]--></td>
+                                                        <td align="left" valign="middle"
+                                                            style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%; padding-top:10px; padding-bottom:10px; padding-left:10px"
+                                                            class="center"
+                                                            bgcolor="#F3F3F3">
+                                                            <strong>
+                                                                <?= $productKey ?>
+                                                                <br/>
+                                                            </strong>
+                                                        </td>
                                                     </tr>
                                                 </table>
-                                                <!--[if (mso)|(IE)]>
-                                                </td>
-                                                </tr>
-                                                </table>
-                                                <![endif]--></td>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>&nbsp;</td>
+                                        </tr>
+                                        <tr>
+                                            <td align="left"
+                                                valign="middle"
+                                                style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%;  padding-left:10px; padding-right:10px"
+                                                class="center hidePad"><strong>2.</strong> Go to: <span
+                                                        class="AOLcolor"><a href="https://www.office.com/myaccount"
+                                                                            style="color:#484442; text-decoration:underline"><strong>www.office.com/myaccount</strong></a></span>
+                                                (this will open in a new tab).
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>&nbsp;</td>
+                                        </tr>
+                                        <tr>
+                                            <td align="left" valign="middle"
+                                                style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%;  padding-left:10px; padding-right:10px"
+                                                class="center hidePad"><strong>3.</strong> Sign in to your Microsoft
+                                                account.<br>It's okay if you don't have an account - it only takes a
+                                                couple of minutes to make one.
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>&nbsp;</td>
+                                        </tr>
+                                        <tr>
+                                            <td align="left" valign="middle"
+                                                style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%;  padding-left:10px; padding-right:10px"
+                                                class="center hidePad"><strong>4.</strong> Click on 'My Account' and
+                                                click 'Redeem'.<br>Here's what the page will look like:
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td height="8" style="font-size:0px;line-height:0px">&nbsp;</td>
+                                        </tr>
+                                        <tr>
+                                            <td align="left"
+                                                valign="middle"
+                                                style="padding-left:10px; padding-right:10px" class="center hidePad">
+                                                <img src="http://wpm.ccmp.eu/wpm/100104/ContentUploads/ESDSSImage.jpg"
+                                                     width="233" height="176" style="display:block" border="0"
+                                                     alt="Screen Shot" title="Screen Shot" class="center"/></td>
+                                        </tr>
+                                        <tr>
+                                            <td>&nbsp;</td>
+                                        </tr>
+                                        <tr>
+                                            <td align="left"
+                                                valign="middle"
+                                                style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%;  padding-left:10px; padding-right:10px"
+                                                class="center hidePad"><strong>5.</strong> Paste in your code from step
+                                                1 and click 'Confirm'.
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td>&nbsp;</td>
@@ -676,124 +570,55 @@ if (is_array($downloadUrl)) {
                                         </tr>
                                         <tr>
                                             <td align="left" valign="middle"
-                                                style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:18px; padding-bottom:10px; padding-left:10px"
-                                                class="center"><strong>Need some help?</strong></td>
+                                                style="color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:18px; padding-right:10px; padding-left:10px"
+                                                class="center hidePad"><strong>Need some help?</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td height="10" style="font-size:0px;line-height:0px">&nbsp;</td>
                                         </tr>
                                         <tr>
                                             <td align="left" valign="middle" class="center hidePad"
                                                 style="padding-left:10px; padding-right:10px; color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%">
-                                                Need some help installing your software? <a href="tel:0344 324 9222"
-                                                                                            style="color:#484442; text-decoration:none">Give
-                                                    us a call</a>, or live chat with us.
+                                                Open Live Chat below and we'll help you get started.
                                             </td>
                                         </tr>
                                         <tr>
                                             <td>&nbsp;</td>
                                         </tr>
                                         <tr>
-                                            <td align="center" valign="middle"><!--[if (mso)|(IE)]>
-                                                <table border="0" cellspacing="0" cellpadding="0" width="638"
-                                                       align="center">
+                                            <td align="left" valign="middle" class="center hidePad"
+                                                style="padding-left:10px; padding-right:10px">
+                                                <table width="200" border="0" align="left" cellpadding="0"
+                                                       cellspacing="0" bgcolor="#179DDA" class="center">
                                                     <tr>
-                                                        <td align="center" valign="middle" width="638"><![endif]-->
-                                                <table width="100%" border="0" align="center" cellpadding="0"
-                                                       cellspacing="0" class="Width638" style="max-width:638px">
-                                                    <tr>
-                                                        <td valign="middle"><!--[if (mso)|(IE)]>
-                                                            <table border="0" cellspacing="0" cellpadding="0"
-                                                                   width="319" align="left">
-                                                                <tr>
-                                                                    <td align="center" valign="middle" width="319">
-                                                            <![endif]-->
-                                                            <table width="319" border="0" align="left" cellpadding="0"
-                                                                   cellspacing="0" class="center deviceWidth">
-                                                                <tr>
-                                                                    <td align="center" valign="middle">
-                                                                        <table width="200" border="0" align="center"
-                                                                               cellpadding="0" cellspacing="0"
-                                                                               bgcolor="#179DDA">
-                                                                            <tr>
-                                                                                <td width="150" height="40" align="left"
-                                                                                    valign="middle"
-                                                                                    style="font-family:Arial, Helvetica, sans-serif; font-size:16px; color:#FFFFFF; font-weight:bold; padding-left:20px">
-                                                                                    <a href="http://ao.com/help-and-advice/help-with-my-order/contact-us?WT.z_PT=MDA&WT.z_MT=Retention&WT.z_RTM=Email&WT.z_EMT=transactional&WT.z_EMN=ESD&WT.srch=1"
-                                                                                       style="text-decoration:none; color:#FFFFFF; display:block; width:100%; line-height:40px">Contact
-                                                                                        us</a></td>
-                                                                                <td width="50" height="40"
-                                                                                    align="center" valign="middle"><a
-                                                                                            href="http://ao.com/help-and-advice/help-with-my-order/contact-us?WT.z_PT=MDA&WT.z_MT=Retention&WT.z_RTM=Email&WT.z_EMT=transactional&WT.z_EMN=ESD&WT.srch=1"
-                                                                                            style="line-height:40px"><img
-                                                                                                src="http://wpm.ccmp.eu/wpm/100104/ContentUploads/CTA-Arrow-White001.fw.png"
-                                                                                                width="10" height="16"
-                                                                                                style="line-height:40px"
-                                                                                                border="0"/></a></td>
-                                                                            </tr>
-                                                                        </table>
-                                                                    </td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>&nbsp;</td>
-                                                                </tr>
-                                                            </table>
-                                                            <!--[if (mso)|(IE)]>
-                                                            </td>
-                                                            </tr>
-                                                            </table>
-                                                            </td>
-                                                            <td>
-                                                                <table border="0" cellspacing="0" cellpadding="0"
-                                                                       width="319" align="left">
-                                                                    <tr>
-                                                                        <td align="center" valign="middle" width="319">
-                                                            <![endif]-->
-                                                            <table width="319" border="0" align="left" cellpadding="0"
-                                                                   cellspacing="0" class="center deviceWidth">
-                                                                <tr>
-                                                                    <td align="center" valign="middle">
-                                                                        <table width="200" border="0" align="center"
-                                                                               cellpadding="0" cellspacing="0"
-                                                                               bgcolor="#179DDA">
-                                                                            <tr>
-                                                                                <td width="150" height="40" align="left"
-                                                                                    valign="middle"
-                                                                                    style="font-family:Arial, Helvetica, sans-serif; font-size:16px; color:#FFFFFF; font-weight:bold; padding-left:20px">
-                                                                                    <a href="http://ao.com/help-and-advice?WT.z_PT=MDA&WT.z_MT=Retention&WT.z_RTM=Email&WT.z_EMT=transactional&WT.z_EMN=ESD&WT.srch=1"
-                                                                                       style="text-decoration:none; color:#FFFFFF; display:block; width:100%; line-height:40px">Ask
-                                                                                        a question</a></td>
-                                                                                <td width="50" height="40"
-                                                                                    align="center" valign="middle"><a
-                                                                                            href="http://ao.com/help-and-advice?WT.z_PT=MDA&WT.z_MT=Retention&WT.z_RTM=Email&WT.z_EMT=transactional&WT.z_EMN=ESD&WT.srch=1"
-                                                                                            style="line-height:40px"><img
-                                                                                                src="http://wpm.ccmp.eu/wpm/100104/ContentUploads/CTA-Arrow-White001.fw.png"
-                                                                                                width="10" height="16"
-                                                                                                style="line-height:40px"
-                                                                                                border="0"/></a></td>
-                                                                            </tr>
-                                                                        </table>
-                                                                    </td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td>&nbsp;</td>
-                                                                </tr>
-                                                            </table>
-                                                            <!--[if (mso)|(IE)]>
-                                                            </td>
-                                                            </tr>
-                                                            </table>
-                                                            <![endif]--></td>
+                                                        <td width="150" height="40" align="left" valign="middle"
+                                                            style="font-family:Arial, Helvetica, sans-serif; font-size:16px; color:#FFFFFF; font-weight:bold; padding-left:20px">
+                                                            <a href="http://ao.com/help-and-advice?WT.z_PT=MDA&WT.z_MT=Retention&WT.z_RTM=Email&WT.z_EMT=transactional&WT.z_EMN=ESD&WT.srch=1"
+                                                               style="text-decoration:none; color:#FFFFFF; display:block; width:100%; line-height:40px">Ask
+                                                                a question</a></td>
+                                                        <td width="50" height="40"
+                                                            align="center" valign="middle"><a
+                                                                    href="http://ao.com/help-and-advice?WT.z_PT=MDA&WT.z_MT=Retention&WT.z_RTM=Email&WT.z_EMT=transactional&WT.z_EMN=ESD&WT.srch=1"
+                                                                    style="line-height:40px"><img
+                                                                        src="http://wpm.ccmp.eu/wpm/100104/ContentUploads/CTA-Arrow-White001.fw.png"
+                                                                        width="10" height="16"
+                                                                        style="line-height:40px"
+                                                                        border="0"/></a></td>
                                                     </tr>
                                                 </table>
-                                                <!--[if (mso)|(IE)]>
-                                                </td>
-                                                </tr>
-                                                </table>
-                                                <![endif]--></td>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>&nbsp;</td>
                                         </tr>
                                         <tr>
                                             <td align="left" valign="middle" class="center hidePad"
-                                                style="padding-left:10px; padding-right:10px; padding-bottom:10px; color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%">
+                                                style="padding-left:10px; padding-right:10px; color:#484442; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:130%">
                                                 Don't forget!
                                             </td>
+                                        </tr>
+                                        <tr>
+                                            <td height="10" style="font-size:0px;line-height:0px">&nbsp;</td>
                                         </tr>
                                         <tr>
                                             <td align="left" valign="middle" class="center hidePad"
@@ -1015,8 +840,8 @@ if (is_array($downloadUrl)) {
             style="font-family:Arial, Helvetica, sans-serif; color:#837F7C; font-size:11px; line-height:20px; padding-left:10px; padding-right:10px"
             height="70"><a href="#" style="color:#837F7C; text-decoration:none">You have received this email because you
                 have placed an order with ao.com. <br class="hideContent">AO Retail Limited, 5a The Parklands, Lostock,
-                Bolton. BL6 4SD United Kingdom.</a><br><a href="tel:0344 324 9222"
-                                                          style="color:#837F7C; text-decoration:none">0344 324 9222</a>
+                Bolton. BL6 4SD United Kingdom.</a><br><span class="Outlookcolor"><a href="tel:0344 324 9222"
+                                                                                     style="color:#837F7C; text-decoration:none">0344 324 9222</a></span>
         </td>
     </tr>
 </table>

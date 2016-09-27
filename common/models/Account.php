@@ -284,7 +284,7 @@ class Account extends \yii\db\ActiveRecord {
         \Yii::info(__METHOD__ . ':' . print_r($data, true));
 
         $account                       = $this;
-        $account->include_key_in_email = true;
+//$account->include_key_in_email = true;
 
         // RCH 20150402
         // Check flag on account to see if we should include keys in the email

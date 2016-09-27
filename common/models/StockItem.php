@@ -5,6 +5,7 @@ namespace common\models;
 use Yii;
 use common\models\DigitalProduct;
 use common\models\Orderdetails;
+use common\models\ZtormCatalogueCache;
 use common\models\Stockroom;
 use exertis\savewithaudittrail\SaveWithAuditTrailBehavior;
 use dosamigos\taggable\Taggable;
@@ -15,7 +16,7 @@ use common\models\Tag;
  * A Stockitem is a purchased key sitting in a Stockroom.
  * It is the result of an Order (see Orderdetails).
  * It represents an instance of a DigitalProduct.
- *  
+ *
  * @property integer   $id
  * @property integer   $stockroom_id
  * @property string    $productcode
@@ -64,6 +65,13 @@ class StockItem extends \yii\db\ActiveRecord
      * @var string Product Name
      */
     private $_productName;
+
+    /**
+     * Cached copy of Publisher from eZtorm API
+     *
+     * @var string Publisher
+     */
+    private $_publisher ;
 
     /**
      * Cached copy of Boxshot from eZtorm API
@@ -263,8 +271,8 @@ class StockItem extends \yii\db\ActiveRecord
     }
      *
      */
-    
-    
+
+
     /**
      * GET ITEM PRICE
      * ==============
@@ -275,9 +283,9 @@ class StockItem extends \yii\db\ActiveRecord
         //return ($this->productPrice ? $this->productPrice->item_price : $this->product->cost_price) ;
         //$price = \common\components\CustomerPrice::getPrice($this->getCustomerExertisAccountNumber(), $this->productcode);
         //return $price;
-        
-        $dp = $this->digitalProduct;        
-        
+
+        $dp = $this->digitalProduct;
+
         return $dp->getItemPrice($this->getCustomerExertisAccountNumber());
     }
 /*
@@ -390,7 +398,7 @@ class StockItem extends \yii\db\ActiveRecord
     {
         return $this->hasOne(Orderdetails::className(), ['stock_item_id' => 'id']);
     }
-    
+
     public function getPricat(){
         return $this->hasOne(Pricat::className(), ['item_code'=>'productcode']);
     }
@@ -453,7 +461,7 @@ class StockItem extends \yii\db\ActiveRecord
         if ($this->id == 2054) {
             return Yii::t('app', 'Key could not be fetched');
         }
-        
+
         //return '';
         // have we a cached copy we can use to save us hitting the eZtorm API
         // (The key is never saved locally in the database!)
@@ -501,10 +509,37 @@ class StockItem extends \yii\db\ActiveRecord
             //$this->_productName = \common\components\DigitalPurchaser::s_getProductName($this);
             // RCH 20160818
             // Try to the lookup above to avoid going through so many models
-            $this->_productName = ZtormCatalogueCache::find()->select('Name')->where(['zId'=>$this->eztorm_product_id])->one()->Name;
+            $ztorm = ZtormCatalogueCache::find()->select('Name')->where(['zId'=>$this->eztorm_product_id])->one();
+            if ($ztorm) {
+                $this->_productName = $ztorm->one()->Name;
+            }
         }
 
         return !empty($this->_productName) ? $this->_productName : Yii::t('app', 'Name could not be fetched');
+    } // getProductName
+
+
+    /**
+     * GET PUBLISHER
+     * =============
+     * Fetches the Product name for this Stock Item from eZtorm API
+     *
+     * @return string Product Name
+     */
+    public function getPublisher()
+    {
+        // -------------------------------------------------------------------
+        // have we a cached copy we can use to save us hitting the eZtorm API
+        // (The key is never saved locally in the database!)
+        // -------------------------------------------------------------------
+        if (empty($this->_publisher)) {
+            $ztorm = ZtormCatalogueCache::find()->select('Publisher')->where(['zId'=>$this->eztorm_product_id])->one();
+            if ($ztorm) {
+                $this->_publisher = $ztorm->Publisher;
+            }
+        }
+
+        return !empty($this->_publisher) ? $this->_publisher : Yii::t('app', 'Publisher Name could not be fetched');
     } // getProductName
 
     /**

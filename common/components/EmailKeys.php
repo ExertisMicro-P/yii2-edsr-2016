@@ -372,51 +372,102 @@ class EmailKeys {
      * @var \amnah\yii2\user\models\UserKey $userKey
      *
      * @param                               $recipientDetails
-     * @param                               $selectedCounts
+     * @param                               $unSortedSelectedDetails
      * @param                               $account Account so we can include things like accountLogo
      * @param                               $brand   Brand name (e.g., littlewoods, very) to allow customisation
      *
      * @return mixed
      */
-    private function sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $account, $brand) {
+    private function sendOrderEmailToCustomer($recipientDetails, $unSortedSelectedDetails, $account, $brand) {
+
+        $sortedSelectedDetails = $this->groupItemByPublisher($unSortedSelectedDetails);
+
 
         $mailer           = Yii::$app->mailer;
         $oldViewPath      = $mailer->viewPath;
         $mailer->viewPath = '@common/mail';
-        $templateName     = $this->findEmailTemplate($mailer, $account, $brand);
 
-        list($individualEmails, $includePdfs) = $this->checkEmailOptions($templateName);
+        foreach ($sortedSelectedDetails as $publisher => $selectedDetails) {
+            $templateName = $this->findEmailTemplate($mailer, $account, $publisher, $brand);
 
-        $subject = 'Exertis Digital Stock Room: ' . Yii::t("user", "Order Details for " . $recipientDetails['orderNumber']); // RCH orderNumber is actually just an arbitrary ref entered by the user
+            list($individualEmails, $includePdfs) = $this->checkEmailOptions($templateName);
 
-        //Check if account has a logo
-        if (!$account->logo) {
+            $subject = 'Exertis Digital Stock Room: ' . Yii::t("user", "Order Details for " . $recipientDetails['orderNumber']); // RCH orderNumber is actually just an arbitrary ref entered by the user
 
-            // RCH 20160425
-            // We can't fail it here! it will prevent the email being sent and as this is called via AJAX
-            // it'll fail silently, leaving a mess.
-            // Consider generating another email to the user to ask them to set their logo up.
-            //
-            //
-            //Yii::$app->getSession()->setFlash('warning', 'Please set a logo for your account.');
-            //$this->redirect('/settings');
+            //Check if account has a logo
+            if (!$account->logo) {
 
-            //return;
+                // RCH 20160425
+                // We can't fail it here! it will prevent the email being sent and as this is called via AJAX
+                // it'll fail silently, leaving a mess.
+                // Consider generating another email to the user to ask them to set their logo up.
+                //
+                //
+                //Yii::$app->getSession()->setFlash('warning', 'Please set a logo for your account.');
+                //$this->redirect('/settings');
+
+                //return;
+            }
+
+
+            if ($individualEmails) {
+                $result = $this->sendEmailPerItem($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $selectedDetails, $account);
+
+            } else {
+                $result = $this->sendEmail($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $selectedDetails, $account);
+            }
+
         }
-
-
-        if ($individualEmails) {
-            $result = $this->sendEmailPerItem($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $selectedDetails, $account);
-
-        } else {
-            $result = $this->sendEmail($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $selectedDetails, $account);
-        }
-
-
         // restore view path and return result
         $mailer->viewPath = $oldViewPath;
 
         return $result;
+    }
+
+    /**
+     * GROUP ITEM BY PUBLISHER
+     * =======================
+     * This is called to sort the selected items into groups based on their
+     * publisher. The original input is already sorted by product code, so this
+     * also maintains that sorting.
+     *
+     * This is almost certainly doing more database work than necessary, as I
+     * think the details for each code will be identical, so the inner loop
+     * is redundant.
+     *
+     * @param $selectedDetails
+     *
+     * @return array
+     */
+    private function groupItemByPublisher($selectedDetails) {
+
+        $results = [];
+
+        foreach ($selectedDetails['codes'] as $productcode => $details) {
+
+            foreach ($details['keyItems'] as $stockItemId => $key) {
+                $publisher = '';
+                $stockItem = StockItem::find()
+                                      ->where(['id' => $stockItemId])
+                                      ->one();
+                if ($stockItem) {
+                    $publisher = $stockItem->publisher;
+                }
+                if (!array_key_exists($publisher, $results)) {
+                    $results[$publisher] = ['codes' => []];
+                }
+                if (!array_key_exists($productcode, $results[$publisher]['codes'])) {
+                    $results[$publisher]['codes'][$productcode] = [
+                        'description' => $details['description'],
+                        'faqs'        => $details['faqs'],
+                        'downloadUrl' => $details['downloadUrl'],
+                        'keyItems'    => []
+                    ];
+                }
+                $results[$publisher]['codes'][$productcode]['keyItems'][$stockItemId] = $key ;
+            }
+        }
+        return $results ;
     }
 
     /**
@@ -437,7 +488,6 @@ class EmailKeys {
         $options = strrchr($templateName, '.');
         if ($options) {
             $options = substr($options, 1);
-            echo "\nOPTIONS $options\n";
 
             if (strpos($options, ':')) {
                 $options = explode(':', $options);
@@ -528,9 +578,6 @@ class EmailKeys {
      */
     private function sendEmail($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $emailData, $account) {
 
-        echo "\nEMAILDATA  $includePdfs \n";
-        print_r($emailData);
-
         $message = $mailer->compose($templateName . '.php',
                                     compact("subject", "recipientDetails", "emailData", "account"))
                           ->setTo([$recipientDetails['email'] => $recipientDetails['recipient']])
@@ -563,57 +610,88 @@ class EmailKeys {
      *
      * @param $mailer
      * @param $account
+     * @param $publisher
      * @param $brand
      *
      * @return string
      */
-    private function findEmailTemplate($mailer, $account, $brand) {
-//        return 'stockroom/orderedetails.pdfs';
+    private function findEmailTemplate($mailer, $account, $publisher, $brand) {
 
+        // -------------------------------------------------------------------
+        // The following are the valid name combinations, and in the order
+        // they are searched for.
+        // -------------------------------------------------------------------
+        // NOTE : All the names will be prefixed by email and suffixed .php
+        // -------------------------------------------------------------------
+        $possibleNames = [
+            '_' . $publisher . '_' . $brand,
+            '_' . $publisher,
+            '_' . $brand,
+            ''
+        ];
+
+        // -------------------------------------------------------------------
+        // Find the basepath to all the templates.
+        // -------------------------------------------------------------------
         $basePath = Yii::getAlias($mailer->viewPath);
         if (substr($basePath, -1, 1) <> '/') {
             $basePath .= '/';
         }
 
-        $possibleName = 'stockroom/email_' . $account->customer_exertis_account_number;
+        // -------------------------------------------------------------------
+        // All account specific templates must reside in an account directory
+        // -------------------------------------------------------------------
+        $accountPath   = 'stockroom/' . $account->customer_exertis_account_number . '/' ;
+        $fullDirectory = $basePath . $accountPath ;
+        $template = '' ;
+
+        if (file_exists($fullDirectory) && is_dir($fullDirectory)) {
+            $template = $this->scanDirectoryForTemplate($fullDirectory, $possibleNames) ;
+        }
+
+        if (!$template) {
+            $accountPath   = 'stockroom/' ;
+            $fullDirectory = $basePath . $accountPath . '/';
+            $template = $this->scanDirectoryForTemplate($fullDirectory, $possibleNames) ;
+        }
+
+        if (!$template) {
+            $template = 'orderedetails.pdfs';
+        }
+        return $accountPath . $template ;
+    }
+
+    /**
+     * SCAN DIRECTORY FOR TEMPLATE
+     * ===========================
+     * Searches all files in the passed directory for any one of the possible
+     * valid template names, as passed in.
+     *
+     * @param $fullDirectory
+     * @param $possibleNames
+     *
+     * @return bool|string
+     */
+    private function scanDirectoryForTemplate($fullDirectory, $possibleNames) {
+
         $matches      = [];
-
-        // -------------------------------------------------------------------
-        // Check first for any variation of a file with the brand
-        // -------------------------------------------------------------------
-        if ($brand) {
-            $filenameMask = $basePath . $possibleName . '_' . $brand . '\.*.php';
+        foreach ($possibleNames as $possibleName) {
+            $filenameMask = $fullDirectory . 'email' . $possibleName ;
+            if ($possibleName <> '') {
+                $filenameMask .= '\.*.php';
+            } else {
+                $filenameMask .= '\.php' ;
+            }
             $matches      = glob($filenameMask);
-        }
 
-        // -------------------------------------------------------------------
-        // If no match, check for the account number followed by options
-        // -------------------------------------------------------------------
-        if (!$matches || count($matches) == 0) {
-            $filenameMask = $basePath . $possibleName . '\.*.php';
-            $matches      = glob($filenameMask);
+            // -------------------------------------------------------------------
+            // If we found a match, return just name, minus the extension
+            // -------------------------------------------------------------------
+            if ($matches && count($matches)) {
+                return basename($matches[0], '.php');
+            }
         }
-
-        // -------------------------------------------------------------------
-        // If still no match, check for just the account number
-        // -------------------------------------------------------------------
-        if (!$matches || count($matches) == 0) {
-            $filenameMask = $basePath . $possibleName . '.php';
-            $matches      = glob($filenameMask);
-        }
-
-        // -------------------------------------------------------------------
-        // If we found a match, return it after stripping the full path and
-        //teh php extension (and then pre-pending 'stockroom/')
-        // -------------------------------------------------------------------
-        if ($matches && count($matches)) {
-            return 'stockroom/' . basename($matches[0], '.php');
-        }
-
-        // -------------------------------------------------------------------
-        // Neither found, so return the default
-        // -------------------------------------------------------------------
-        return 'stockroom/orderedetails.pdfs';
+        return false ;
     }
 
 

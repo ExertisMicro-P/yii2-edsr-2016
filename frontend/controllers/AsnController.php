@@ -156,7 +156,7 @@ class AsnController extends ActiveController {
         Yii::$app->response->format     = 'json';
         Yii::$app->response->statusCode = $responseCode;
 
-        return ['message' => $result];
+        return ['status' => $responseCode, 'message' => $result];
     }
 
     /**

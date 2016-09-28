@@ -81,42 +81,6 @@ class EmailKeys {
     }
 
     /**
-     * COMPLETE EMAIL ORDER ON NEW DROPSHIP
-     * ====================================
-     * Almost identical to the above completeEmailOrder, except it doesn't
-     * concern itself about failures in the markKeysAsProcessed request. as
-     * The reason is that before getting here we have already validated that
-     * the key was purchased successfully, and the initial processing may have
-     * already
-     *
-     * @param      $recipientDetails
-     * @param      $selectedItems
-     * @param      $account
-     * @param null $brand
-     *
-     * @return bool
-     */
-    public function completeEmailOrderOnNewDropship($recipientDetails, $selectedItems, $account, $brand = null) {
-
-        \Yii::info(__METHOD__ . ': $recipientDetails=' . print_r($recipientDetails, true));
-        \Yii::info(__METHOD__ . ': $selectedItems=' . print_r($selectedItems, true));
-        \Yii::info(__METHOD__ . ': $account=' . print_r($account->attributes, true));
-
-        $result          = $this->markKeysAsProcessed($recipientDetails, $selectedItems);
-        $selectedDetails = $this->readDescriptionAndKeys($recipientDetails);
-        $result          = $this->sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $account, $brand);
-
-
-        if ($result === true) {
-            $selectedDetails = $this->readDescriptionAndKeys($recipientDetails);
-            $result          = $this->saveEmailedRecipient($recipientDetails, $account);
-            $this->copyStockItemsToEmailedItems($recipientDetails, $selectedItems);
-        }
-
-        return $result;
-    }
-
-    /**
      * RE-EMAIL KEYS
      * =============
      * Sends a duplicate copy of a previously sent email - but with an optional

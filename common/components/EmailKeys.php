@@ -140,10 +140,10 @@ class EmailKeys {
         \Yii::info(__METHOD__ . ': $account=' . print_r($account->attributes, true));
 
         $result = $this->markKeysAsProcessed($recipientDetails, $selectedItems);
-        if ($result) {
-            $selectedDetails = $this->readDescriptionAndKeys($recipientDetails);
-            $this->copyStockItemsToEmailedItems($recipientDetails, $selectedItems);
-        }
+//        if ($result) {
+//            $selectedDetails = $this->readDescriptionAndKeys($recipientDetails);
+//            $this->copyStockItemsToEmailedItems($recipientDetails, $selectedItems);
+//        }
 
         return $result;
     }

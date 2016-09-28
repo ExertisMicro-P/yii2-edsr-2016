@@ -11,6 +11,8 @@ use common\models\Account;
 use yii\web\Response;
 use Yii;
 use common\models\gauth\GAUser;
+use common\components\EmailKeys;
+
 
 class AsnController extends ActiveController {
 
@@ -214,6 +216,8 @@ class AsnController extends ActiveController {
             if ($dse->save()) {
                 $result = true;
 
+                $this->sendEmailForPreOrderedItems($account, $dse);
+
             } elseif (array_key_exists('email', $dse->errors)) {
                 $result = 'Malformed parameter values';
 
@@ -351,6 +355,63 @@ class AsnController extends ActiveController {
         return 'Incorrect PO Number';
     }
 
+    /**
+     * SEND EMAIL FOR PRE-ORDERED ITEMS
+     * ================================
+     * This is called after a new drop ship email is recorded. It scans the
+     * stock_item table for associated items where the keys were purchased
+     * before this was recorded. For each one it then generates and sends
+     * the notification email.
+     *
+     * @param $account
+     * @param $dse
+     *
+     * @return int
+     */
+    private function sendEmailForPreOrderedItems($account, $dse) {
+
+        $accountNumber = $dse->account_id;
+
+        // -------------------------------------------------------------------
+        // Read the full list of entries where the email has not been sent
+        // -------------------------------------------------------------------
+        $items = Orderdetails::find()
+                             ->joinWith(['stockitem' => function($query) use ($accountNumber) {
+                                 $query->where(['<>', 'status', StockItem::STATUS_NOT_PURCHASED])
+                                       ->joinWith(['stockroom' => function($query) use ($accountNumber) {
+                                           $query->joinWith(['account' => function($query) use ($accountNumber) {
+                                               $query->where(['account.id' => $accountNumber]);
+                                           }]);
+                                       }]);
+
+                             }])
+                             ->where(['po' => $dse->po])
+                             ->all();
+
+        // -------------------------------------------------------------------
+        // Now gather the stock item details and send the emails. The emailkeys
+        // module handles grouping and sorting into one or more emails
+        // -------------------------------------------------------------------
+        $codes = [] ;
+        if (count($items)) {
+            $recipientDetails = [
+                'email'       => $dse->email,
+                'recipient'   => '',
+                'orderNumber' => $dse->po,
+                'message'     => ''
+            ];
+
+            $account = $items[0]->stockitem->stockroom->account ;
+
+            $emailer = new EmailKeys();
+            foreach ($items as $order) {
+                $codes[] = $order->stock_item_id;
+            }
+            if (count($codes)) {
+                $emailer->completeEmailOrder($recipientDetails, $codes, $account, $dse->brand, true);
+            }
+        }
+    }
 
     /**
      * Find Order

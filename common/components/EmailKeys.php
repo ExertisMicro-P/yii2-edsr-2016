@@ -53,20 +53,64 @@ class EmailKeys {
      * @param array $recipientDetails email address, name, unique ref from popup form etc
      * @param array $selectedItems    Array of Stock Item IDs to send by email
      * @param       $account          Account so we can include things like accountLogo
+     * @param       $processIfAlreadySent If true this is from the add drop ship handler
      *
      * @return array|StockroomController|mixed|string|static
      * @throws \Exception
      */
-    public function completeEmailOrder($recipientDetails, $selectedItems, $account, $brand = null) {
+    public function completeEmailOrder($recipientDetails, $selectedItems, $account, $brand = null, $processIfAlreadySent = false) {
 
         \Yii::info(__METHOD__ . ': $recipientDetails=' . print_r($recipientDetails, true));
         \Yii::info(__METHOD__ . ': $selectedItems=' . print_r($selectedItems, true));
         \Yii::info(__METHOD__ . ': $account=' . print_r($account->attributes, true));
 
-        list($result, $selectedDetails) = $this->markKeysAsProcessed($recipientDetails, $selectedItems, $account);
+        $result = $this->markKeysAsProcessed($recipientDetails, $selectedItems);
+        // -------------------------------------------------------------------
+        // If no errors, of we're from the drop ship handler, which sends emails
+        // to previously purchased/emailed items
+        // -------------------------------------------------------------------
+        if ($processIfAlreadySent || $result === true) {
+            $result = $this->saveEmailedRecipient($recipientDetails, $account);
+            $this->copyStockItemsToEmailedItems($recipientDetails, $selectedItems);
+
+            $selectedDetails = $this->readDescriptionAndKeys($recipientDetails);
+            $result          = $this->sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $account, $brand);
+        }
+
+        return $result;
+    }
+
+    /**
+     * COMPLETE EMAIL ORDER ON NEW DROPSHIP
+     * ====================================
+     * Almost identical to the above completeEmailOrder, except it doesn't
+     * concern itself about failures in the markKeysAsProcessed request. as
+     * The reason is that before getting here we have already validated that
+     * the key was purchased successfully, and the initial processing may have
+     * already
+     *
+     * @param      $recipientDetails
+     * @param      $selectedItems
+     * @param      $account
+     * @param null $brand
+     *
+     * @return bool
+     */
+    public function completeEmailOrderOnNewDropship($recipientDetails, $selectedItems, $account, $brand = null) {
+
+        \Yii::info(__METHOD__ . ': $recipientDetails=' . print_r($recipientDetails, true));
+        \Yii::info(__METHOD__ . ': $selectedItems=' . print_r($selectedItems, true));
+        \Yii::info(__METHOD__ . ': $account=' . print_r($account->attributes, true));
+
+        $result          = $this->markKeysAsProcessed($recipientDetails, $selectedItems);
+        $selectedDetails = $this->readDescriptionAndKeys($recipientDetails);
+        $result          = $this->sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $account, $brand);
+
 
         if ($result === true) {
-            $result = $this->sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $account, $brand);
+            $selectedDetails = $this->readDescriptionAndKeys($recipientDetails);
+            $result          = $this->saveEmailedRecipient($recipientDetails, $account);
+            $this->copyStockItemsToEmailedItems($recipientDetails, $selectedItems);
         }
 
         return $result;
@@ -131,7 +175,44 @@ class EmailKeys {
         \Yii::info(__METHOD__ . ': $selectedItems=' . print_r($selectedItems, true));
         \Yii::info(__METHOD__ . ': $account=' . print_r($account->attributes, true));
 
-        list($result, $selectedDetails) = $this->markKeysAsProcessed($recipientDetails, $selectedItems, $account);
+        $result = $this->markKeysAsProcessed($recipientDetails, $selectedItems);
+        if ($result) {
+            $selectedDetails = $this->readDescriptionAndKeys($recipientDetails);
+            $this->copyStockItemsToEmailedItems($recipientDetails, $selectedItems);
+        }
+
+        return $result;
+    }
+
+    /**
+     * MARK KEYS AS PROCESSED
+     * ======================
+     * This handles the actual process of flagging oen or more keys as processed.
+     *
+     * @param $recipientDetails
+     * @param $selectedItems
+     * @param $account
+     *
+     * @return bool
+     * @throws \Exception
+     */
+    private function markKeysAsProcessed($recipientDetails, $selectedItems) {
+        $errors        = [];
+        $newStatusCode = StockItem::STATUS_DELIVERING . $recipientDetails['orderNumber'];
+        $connection    = EmailedUser::getDb();
+        $transaction   = $connection->beginTransaction();
+
+        try {
+            $result = $this->updateStockItems($newStatusCode, $selectedItems);
+
+            if ($result !== true) {
+                $errors['insufficient'] = $result;
+            }
+
+        } catch (\Exception $e) {
+            $transaction->rollBack();
+            throw $e;
+        }
 
         return $result;
     }
@@ -148,12 +229,13 @@ class EmailKeys {
      * @return array
      * @throws \Exception
      */
-    private function markKeysAsProcessed($recipientDetails, $selectedItems, $account) {
+    private function oldmarkKeysAsProcessed($recipientDetails, $selectedItems, $account) {
         $errors          = [];
         $connection      = EmailedUser::getDb();
-        $transaction     = $connection->beginTransaction();
         $selectedDetails = [];
+        $result          = false;
 
+        $transaction = $connection->beginTransaction();
         try {
             $result = $this->saveEmailedRecipient($recipientDetails, $account);
 
@@ -221,7 +303,7 @@ class EmailKeys {
         $emailedRecipient->account_id = $account->id;
 
         if ($this->user) {
-            if (!$emailedRecipient->saveWithAuditTrail('Emailling ' . $emailedRecipient->email . ' with ' . $emailedRecipient->order_number)) {
+            if (!$emailedRecipient->saveWithAuditTrail('Emailing ' . $emailedRecipient->email . ' with ' . $emailedRecipient->order_number)) {
                 $result = $emailedRecipient->errors;
                 \Yii::error(__METHOD__ . ': ' . print_r($emailedRecipient->getErrors(), true));
 
@@ -274,7 +356,6 @@ class EmailKeys {
                 }
             }
 
-
             // -------------------------------------------------------
             // If failed to move enough, record the available count
             // -------------------------------------------------------
@@ -292,14 +373,14 @@ class EmailKeys {
      * =================================
      * This creates an EmailedItem record for each of the requested stock items
      *
-     * @param $newStatusCode
      * @param $recipientDetails
+     * @param $selectedItems
      *
      * @return bool|int
      * @throws \yii\db\Exception
      */
-    private function copyStockItemsToEmailedItems($newStatusCode, $recipientDetails, $selectedItems) {
-        \Yii::info(__METHOD__ . ': $newStatusCode=' . print_r($newStatusCode, true));
+    private function copyStockItemsToEmailedItems($recipientDetails, $selectedItems) {
+
         \Yii::info(__METHOD__ . ': $recipientDetails=' . print_r($recipientDetails, true));
         \Yii::info(__METHOD__ . ': $selectedItems=' . print_r($selectedItems, true));
 
@@ -310,22 +391,16 @@ class EmailKeys {
         $sqlCommand = $connection->createCommand(
             'INSERT INTO ' . EmailedItem::tableName() . '
                     (emailed_user_id, stock_item_id, created_at)
-                    SELECT :emailedId, id, NOW()
-                    FROM ' . StockItem::tableName() .
-            ' WHERE ' .
-            //' status=:status '.
-            //    ' AND '.
-            'id IN (' . implode(',', $selectedItems) . ')'
+                        SELECT :emailedId, id, NOW()
+                            FROM ' . StockItem::tableName() . '
+                            WHERE id IN(' . implode(', ', $selectedItems) . ')'
         )
                                  ->bindValues([':emailedId' => $recipientDetails['emailedUser']['id'],
-                                               //':status'    => $newStatusCode
-                                               //':selectedItems' => implode(', ', $selectedItems)
-                                               //':selectedItems' => $selectedItems
                                               ]);
 
         $result = $sqlCommand->execute();
 
-        $msg       = 'Stock items Emailed/Printed to (email:' . $recipientDetails['email'] . ') (Ref: ' . $recipientDetails['orderNumber'] . ')';
+        $msg       = 'Stock items Emailed / Printed to(email:' . $recipientDetails['email'] . ') (Ref: ' . $recipientDetails['orderNumber'] . ')';
         $tableName = EmailedItem::tableName();
         $recordId  = $recipientDetails['emailedUser']['id'];
 
@@ -392,13 +467,16 @@ class EmailKeys {
 
             list($individualEmails, $includePdfs) = $this->checkEmailOptions($templateName);
 
-            $subject = 'Exertis Digital Stock Room: ' . Yii::t("user", "Order Details for " . $recipientDetails['orderNumber']); // RCH orderNumber is actually just an arbitrary ref entered by the user
+            // ---------------------------------------------------------------
+            // RCH orderNumber is actually just an arbitrary ref entered by the user
+            // ---------------------------------------------------------------
+            $subject = 'Exertis Digital Stock Room: ' . Yii::t("user", "Order Details for " . $recipientDetails['orderNumber']);
 
             //Check if account has a logo
             if (!$account->logo) {
 
                 // RCH 20160425
-                // We can't fail it here! it will prevent the email being sent and as this is called via AJAX
+                // We can't fail it here!it will prevent the email being sent and as this is called via AJAX
                 // it'll fail silently, leaving a mess.
                 // Consider generating another email to the user to ask them to set their logo up.
                 //
@@ -418,7 +496,7 @@ class EmailKeys {
             }
 
         }
-        // restore view path and return result
+// restore view path and return result
         $mailer->viewPath = $oldViewPath;
 
         return $result;
@@ -464,10 +542,11 @@ class EmailKeys {
                         'keyItems'    => []
                     ];
                 }
-                $results[$publisher]['codes'][$productcode]['keyItems'][$stockItemId] = $key ;
+                $results[$publisher]['codes'][$productcode]['keyItems'][$stockItemId] = $key;
             }
         }
-        return $results ;
+
+        return $results;
     }
 
     /**
@@ -641,24 +720,25 @@ class EmailKeys {
         // -------------------------------------------------------------------
         // All account specific templates must reside in an account directory
         // -------------------------------------------------------------------
-        $accountPath   = 'stockroom/' . $account->customer_exertis_account_number . '/' ;
-        $fullDirectory = $basePath . $accountPath ;
-        $template = '' ;
+        $accountPath   = 'stockroom/' . $account->customer_exertis_account_number . '/';
+        $fullDirectory = $basePath . $accountPath;
+        $template      = '';
 
         if (file_exists($fullDirectory) && is_dir($fullDirectory)) {
-            $template = $this->scanDirectoryForTemplate($fullDirectory, $possibleNames) ;
+            $template = $this->scanDirectoryForTemplate($fullDirectory, $possibleNames);
         }
 
         if (!$template) {
-            $accountPath   = 'stockroom/' ;
+            $accountPath   = 'stockroom/';
             $fullDirectory = $basePath . $accountPath . '/';
-            $template = $this->scanDirectoryForTemplate($fullDirectory, $possibleNames) ;
+            $template      = $this->scanDirectoryForTemplate($fullDirectory, $possibleNames);
         }
 
         if (!$template) {
             $template = 'orderedetails.pdfs';
         }
-        return $accountPath . $template ;
+
+        return $accountPath . $template;
     }
 
     /**
@@ -674,23 +754,24 @@ class EmailKeys {
      */
     private function scanDirectoryForTemplate($fullDirectory, $possibleNames) {
 
-        $matches      = [];
-        $dir = new \DirectoryIterator($fullDirectory) ;
+        $matches = [];
+        $dir     = new \DirectoryIterator($fullDirectory);
 
         foreach ($possibleNames as $possibleName) {
-            $fileNameMask = "/^email$possibleName(.*?).php/" ;
-            $iterator = new \RegexIterator($dir, $fileNameMask, \RegexIterator::MATCH);
+            $fileNameMask = "/^email$possibleName(.*?).php/";
+            $iterator     = new \RegexIterator($dir, $fileNameMask, \RegexIterator::MATCH);
 
             // -------------------------------------------------------------------
             // If we found a match, return just name, minus the extension
             // -------------------------------------------------------------------
-            foreach($iterator as $fileinfo) {
+            foreach ($iterator as $fileinfo) {
                 if (!$fileinfo->isDot()) {
-                    return $fileinfo->getBasename('.php') ;
+                    return $fileinfo->getBasename('.php');
                 }
             }
         }
-        return false ;
+
+        return false;
     }
 
 

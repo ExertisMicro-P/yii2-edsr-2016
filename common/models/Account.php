@@ -398,7 +398,7 @@ class Account extends \yii\db\ActiveRecord {
             $poData['pos'] = [] ;
             $poData['pos'][$poKey] = $details ;
             $poData['showkeys'] = $selectedDetails['showkeys'] ;
-            
+
             if (!$this->sendEmailWithAllKeys($poData)) {
                 $result = false;
                 break;
@@ -416,8 +416,6 @@ class Account extends \yii\db\ActiveRecord {
      *
      * If any match, the keys will be sent out immediately.
      *
-     * THIS NEEDS TO BE ADJUSTED TO CATER FOR THE BRAND
-     *
      * @param $selectedDetails
      *
      * @return bool
@@ -430,8 +428,9 @@ class Account extends \yii\db\ActiveRecord {
         foreach ($selectedDetails['pos'] as $poKey => $details) {
 
             $dse = DropshipEmailDetails::find()
-                                       ->where(['account_id' => $this->id])
-                                       ->andWhere(['po' => $poKey])
+                                       ->where(['account_id' => $this->id,
+                                                'po' => $poKey,
+                                                'deleted_at' => null])
                                        ->one();
             if ($dse) {
                 $recipientDetails = [

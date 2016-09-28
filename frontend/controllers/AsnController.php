@@ -3,6 +3,9 @@
 namespace frontend\controllers;
 
 use common\models\DropshipEmailDetails;
+use common\models\Orderdetails;
+use common\models\StockItem;
+
 use yii\rest\ActiveController;
 use common\models\Account;
 use yii\web\Response;
@@ -133,8 +136,8 @@ class AsnController extends ActiveController {
 
         $responseCode = 400;
 
-        $purchaseOrder = trim($po) ;
-        $brand = trim($brand) ;
+        $purchaseOrder = trim($po);
+        $brand         = trim($brand);
 
         if (($result = $this->verifySDEParametersProvided($accountNo, $po, $email)) === true) {
 
@@ -174,37 +177,59 @@ class AsnController extends ActiveController {
     private function recordDropShipEmail($account, $accountNo, $purchaseOrder, $emailAddress, $brand) {
 
         if (($result = $this->checkIfDuplicate($account, $accountNo, $purchaseOrder, $emailAddress, $brand)) === false) {
-            $dse                  = new DropshipEmailDetails();
-            $dse->account_id      = $account->id;
-            $dse->account_no      = $accountNo;
-            $dse->po              = $purchaseOrder;
-            $dse->email           = $emailAddress;
 
-            if ($brand && strlen($brand)) {
-                $dse->brand = $brand ;
+            $this->deleteOldEmails($account, $accountNo, $purchaseOrder, $brand);
+
+            $result = $this->addNewDropShipEmail($account, $accountNo, $purchaseOrder, $emailAddress, $brand);
+        }
+
+        return $result;
+    }
+
+    /**
+     * ADD NEW DROPSHIP EMAIL
+     * ======================
+     * Saves the new details
+     *
+     * @param $account
+     * @param $accountNo
+     * @param $purchaseOrder
+     * @param $emailAddress
+     * @param $brand
+     *
+     * @return bool|string
+     */
+    private function addNewDropShipEmail($account, $accountNo, $purchaseOrder, $emailAddress, $brand) {
+        $dse             = new DropshipEmailDetails();
+        $dse->account_id = $account->id;
+        $dse->account_no = $accountNo;
+        $dse->po         = $purchaseOrder;
+        $dse->email      = $emailAddress;
+
+        if ($brand && strlen($brand)) {
+            $dse->brand = $brand;
+        }
+
+        try {
+            if ($dse->save()) {
+                $result = true;
+
+            } elseif (array_key_exists('email', $dse->errors)) {
+                $result = 'Malformed parameter values';
+
+            } else {
+                $result = 'Malformed parameter values';
             }
 
-            try {
-                if ($dse->save()) {
-                    $result = true;
+        } catch (\yii\db\Exception $exc) {
+            // -------------------------------------------------------
+            // PDO duplicate record error. Could do with a constant
+            // -------------------------------------------------------
+            if ($exc->errorInfo[1] == 1062) {
+                $result = 'Duplicate Request';
 
-                } elseif (array_key_exists('email', $dse->errors)) {
-                    $result = 'Malformed parameter values';
-
-                } else {
-                    $result = 'Malformed parameter values';
-                }
-
-            } catch (\yii\db\Exception $exc) {
-                // -------------------------------------------------------
-                // PDO duplicate record error. Could do with a constant
-                // -------------------------------------------------------
-                if ($exc->errorInfo[1] == 1062) {
-                    $result = 'Duplicate Request';
-
-                } else {
-                    $result = $exc->message();
-                }
+            } else {
+                $result = $exc->getMessage();
             }
         }
 
@@ -225,16 +250,37 @@ class AsnController extends ActiveController {
      */
     private function checkIfDuplicate($account, $accountNo, $purchaseOrder, $emailAddress, $brand) {
         $dse = DropshipEmailDetails::find()
-                                   ->where(['account_id' => $account->id])
-                                   ->andWhere(['po' => $purchaseOrder])
-                                   ->andWhere(['email' => $emailAddress]) ;
+                                   ->where(['account_id' => $account->id,
+                                            'po'         => $purchaseOrder,
+                                            'email'      => $emailAddress,
+                                            'deleted_at' => null]);
         if ($brand && strlen($brand)) {
-            $dse->andWhere(['brand' => $brand]) ;
+            $dse->andWhere(['brand' => $brand]);
         } else {
-            $dse->andWhere(['brand' => null]) ;
+            $dse->andWhere(['brand' => null]);
         }
 
         return $dse->count() == 0 ? false : 'Duplicate Request';
+    }
+
+    /**
+     * DELETE OLD EMAILS
+     * =================
+     * Soft deletes all previous emails for this account and purchase order
+     *
+     * @param $account
+     * @param $accountNo
+     * @param $purchaseOrder
+     * @param $brand
+     *
+     * @return bool|string
+     */
+    private function deleteOldEmails($account, $accountNo, $purchaseOrder, $brand) {
+
+        $dse = DropshipEmailDetails::updateAll(['deleted_at' => date('Y-m-d H:i:s')],
+                                               ['account_id' => $account->id,
+                                                'po'         => $purchaseOrder,
+                                                'deleted_at' => null]);
     }
 
 

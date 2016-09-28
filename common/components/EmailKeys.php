@@ -48,15 +48,13 @@ class EmailKeys {
      * This is the controlling process when keys are initially emailed out for
      * one or more items.
      *
+     * @param      $recipientDetails
+     * @param      $selectedItems
+     * @param      $account
+     * @param null $brand
+     * @param bool $processIfAlreadySent
      *
-     *
-     * @param array $recipientDetails email address, name, unique ref from popup form etc
-     * @param array $selectedItems    Array of Stock Item IDs to send by email
-     * @param       $account          Account so we can include things like accountLogo
-     * @param       $processIfAlreadySent If true this is from the add drop ship handler
-     *
-     * @return array|StockroomController|mixed|string|static
-     * @throws \Exception
+     * @return bool|mixed
      */
     public function completeEmailOrder($recipientDetails, $selectedItems, $account, $brand = null, $processIfAlreadySent = false) {
 
@@ -70,8 +68,7 @@ class EmailKeys {
         // to previously purchased/emailed items
         // -------------------------------------------------------------------
         if ($processIfAlreadySent || $result === true) {
-            $result = $this->saveEmailedRecipient($recipientDetails, $account);
-            $this->copyStockItemsToEmailedItems($recipientDetails, $selectedItems);
+            $this->logToEmailTable($recipientDetails, $selectedItems, null, $account) ;
 
             $selectedDetails = $this->readDescriptionAndKeys($recipientDetails);
             $result          = $this->sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $account, $brand);
@@ -87,21 +84,67 @@ class EmailKeys {
      * message
      *
      * @param $recipientDetails
-     * @param $selectedItems
+     * @param $selectedDetails
      * @param $account
      * @param $stockId
      *
      * @return mixed
      */
-    public function reEmailKeys($recipientDetails, $selectedItems, $account, $brand = null) {
+    public function reEmailKeys($recipientDetails, $selectedDetails, $account, $brand = null) {
 
         \Yii::info(__METHOD__ . ': $recipientDetails=' . print_r($recipientDetails, true));
-        \Yii::info(__METHOD__ . ': $selectedItems=' . print_r($selectedItems, true));
+        \Yii::info(__METHOD__ . ': selectedDetails=' . print_r($selectedDetails, true));
         \Yii::info(__METHOD__ . ': $account=' . print_r($account->attributes, true));
 
-        $result = $this->sendOrderEmailToCustomer($recipientDetails, $selectedItems, $account, $brand);
+        $this->logToEmailTable($recipientDetails, null, $selectedDetails, $account) ;
+
+        $result = $this->sendOrderEmailToCustomer($recipientDetails, $selectedDetails, $account, $brand);
 
         return $result;
+    }
+
+    /**
+     * FIND STOCK IDS
+     * ==============
+     * Loops through the full stock details to build an array of hte stock ids.
+     *
+     * @param $selectedDetails
+     *
+     * @return array
+     */
+    private function findStockIds($selectedDetails) {
+        $codes = [] ;
+        $results = [];
+
+        foreach ($selectedDetails['codes'] as $productcode => $details) {
+
+            foreach ($details['keyItems'] as $stockItemId => $key) {
+                $codes[] = $stockItemId ;
+            }
+        }
+        return $codes ;
+    }
+
+    /**
+     * LOG TO EMAIL TABLE
+     * ==================
+     * Creates entries in the emailed_used and emailed_items tables for the current
+     * request. Some requests pass all the stock item ids in the selectedItems
+     * array, whereas other provide full stock details. In the latter case, we
+     * call fndStockId to get the ids to record.
+     *
+     * @param $recipientDetails
+     * @param $selectedItems
+     * @param $selectedDetails
+     * @param $account
+     */
+    private function logToEmailTable(&$recipientDetails, $selectedItems, $selectedDetails, $account) {
+        if (!$selectedItems && $selectedDetails) {
+            $selectedItems = $this->findStockIds($selectedDetails);
+        }
+
+        $result = $this->saveEmailedRecipient($recipientDetails, $account);
+        $this->copyStockItemsToEmailedItems($recipientDetails, $selectedItems);
     }
 
 
@@ -140,10 +183,9 @@ class EmailKeys {
         \Yii::info(__METHOD__ . ': $account=' . print_r($account->attributes, true));
 
         $result = $this->markKeysAsProcessed($recipientDetails, $selectedItems);
-//        if ($result) {
-//            $selectedDetails = $this->readDescriptionAndKeys($recipientDetails);
-//            $this->copyStockItemsToEmailedItems($recipientDetails, $selectedItems);
-//        }
+        if ($result) {
+            $this->logToEmailTable($recipientDetails, $selectedItems, null, $account) ;
+        }
 
         return $result;
     }
@@ -171,6 +213,9 @@ class EmailKeys {
 
             if ($result !== true) {
                 $errors['insufficient'] = $result;
+
+            } else {
+                $transaction->commit() ;
             }
 
         } catch (\Exception $e) {
@@ -193,54 +238,54 @@ class EmailKeys {
      * @return array
      * @throws \Exception
      */
-    private function oldmarkKeysAsProcessed($recipientDetails, $selectedItems, $account) {
-        $errors          = [];
-        $connection      = EmailedUser::getDb();
-        $selectedDetails = [];
-        $result          = false;
-
-        $transaction = $connection->beginTransaction();
-        try {
-            $result = $this->saveEmailedRecipient($recipientDetails, $account);
-
-            if ($result !== true) {
-                $errors['user'] = $result;
-
-                // ---------------------------------------------------------------
-                // Can now record the individual stock item movements
-                // ---------------------------------------------------------------
-            } else {
-                $newStatusCode = StockItem::STATUS_DELIVERING . $recipientDetails['orderNumber'];
-
-                $result = $this->updateStockItems($newStatusCode, $selectedItems);
-
-                if ($result !== true) {
-                    $errors['insufficient'] = $result;
-
-                } else {
-                    if ($this->copyStockItemsToEmailedItems($newStatusCode, $recipientDetails, $selectedItems)) {
-                        $selectedDetails = $this->readDescriptionAndKeys($recipientDetails);
-                    } else {
-                        $errors['unknown'] = 'Failed';
-                    }
-                }
-            }
-            if (count($errors)) {
-                $result = $errors;
-                $transaction->rollBack();
-
-            } else {
-                $transaction->commit();
-                $result = true;
-            }
-
-        } catch (\Exception $e) {
-            $transaction->rollBack();
-            throw $e;
-        }
-
-        return array($result, $selectedDetails);
-    }
+//    private function oldmarkKeysAsProcessed($recipientDetails, $selectedItems, $account) {
+//        $errors          = [];
+//        $connection      = EmailedUser::getDb();
+//        $selectedDetails = [];
+//        $result          = false;
+//
+//        $transaction = $connection->beginTransaction();
+//        try {
+//            $result = $this->saveEmailedRecipient($recipientDetails, $account);
+//
+//            if ($result !== true) {
+//                $errors['user'] = $result;
+//
+//                // ---------------------------------------------------------------
+//                // Can now record the individual stock item movements
+//                // ---------------------------------------------------------------
+//            } else {
+//                $newStatusCode = StockItem::STATUS_DELIVERING . $recipientDetails['orderNumber'];
+//
+//                $result = $this->updateStockItems($newStatusCode, $selectedItems);
+//
+//                if ($result !== true) {
+//                    $errors['insufficient'] = $result;
+//
+//                } else {
+//                    if ($this->copyStockItemsToEmailedItems($newStatusCode, $recipientDetails, $selectedItems)) {
+//                        $selectedDetails = $this->readDescriptionAndKeys($recipientDetails);
+//                    } else {
+//                        $errors['unknown'] = 'Failed';
+//                    }
+//                }
+//            }
+//            if (count($errors)) {
+//                $result = $errors;
+//                $transaction->rollBack();
+//
+//            } else {
+//                $transaction->commit();
+//                $result = true;
+//            }
+//
+//        } catch (\Exception $e) {
+//            $transaction->rollBack();
+//            throw $e;
+//        }
+//
+//        return array($result, $selectedDetails);
+//    }
 
 
     /**
@@ -737,7 +782,6 @@ class EmailKeys {
 
         return false;
     }
-
 
     /**
      * CREATE KEY PDF

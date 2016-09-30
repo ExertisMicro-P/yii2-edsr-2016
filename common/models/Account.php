@@ -283,7 +283,7 @@ class Account extends \yii\db\ActiveRecord {
 
         \Yii::info(__METHOD__ . ':' . print_r($data, true));
 
-        $account                       = $this;
+        $account = $this;
 //$account->include_key_in_email = true;
 
         // RCH 20150402
@@ -391,13 +391,13 @@ class Account extends \yii\db\ActiveRecord {
      * @return bool
      */
     private function sendEmailPerPO($selectedDetails) {
-        $result = true;
-        $poData['account'] = $selectedDetails['account'] ;
+        $result            = true;
+        $poData['account'] = $selectedDetails['account'];
 
         foreach ($selectedDetails['pos'] as $poKey => $details) {
-            $poData['pos'] = [] ;
-            $poData['pos'][$poKey] = $details ;
-            $poData['showkeys'] = $selectedDetails['showkeys'] ;
+            $poData['pos']         = [];
+            $poData['pos'][$poKey] = $details;
+            $poData['showkeys']    = $selectedDetails['showkeys'];
 
             if (!$this->sendEmailWithAllKeys($poData)) {
                 $result = false;
@@ -429,7 +429,7 @@ class Account extends \yii\db\ActiveRecord {
 
             $dse = DropshipEmailDetails::find()
                                        ->where(['account_id' => $this->id,
-                                                'po' => $poKey,
+                                                'po'         => $poKey,
                                                 'deleted_at' => null])
                                        ->one();
             if ($dse) {
@@ -447,7 +447,7 @@ class Account extends \yii\db\ActiveRecord {
                 if (count($codes)) {
                     $emailer->completeEmailOrder($recipientDetails, $codes, $this, $dse->brand);
 
-                    $this->buildAsnCSVFile($poKey, $dse->email, $details) ;
+                    $this->buildAsnCSVFile($poKey, $dse->email, $details);
                 }
             }
         }
@@ -469,15 +469,15 @@ class Account extends \yii\db\ActiveRecord {
      */
     private function buildAsnCSVFile($po, $deliveryName, $details) {
 
-        $asnData = $this->prepareOrderDetailsForCSV($po, $deliveryName, $details) ;
+        $asnData = $this->prepareOrderDetailsForCSV($po, $deliveryName, $details);
 
-        $csvFileName = $this->createAsnFileName($po) ;
-        $fp = fopen($csvFileName ,'w') ;
+        $csvFileName = $this->createAsnFileName($po);
+        $fp          = fopen($csvFileName, 'w');
 
         // -------------------------------------------------------------------
         // Start with a header row from the array keys
         // -------------------------------------------------------------------
-        fputcsv($fp, array_keys($asnData[0])) ;
+        fputcsv($fp, array_keys($asnData[0]));
 
         // -------------------------------------------------------------------
         // Now append each data row.
@@ -485,8 +485,9 @@ class Account extends \yii\db\ActiveRecord {
         foreach ($asnData as $row) {
             fputcsv($fp, $row);
         }
-        fclose($fp) ;
-        return $csvFileName ;
+        fclose($fp);
+
+        return $csvFileName;
     }
 
     /**
@@ -502,7 +503,7 @@ class Account extends \yii\db\ActiveRecord {
      * @return array
      */
     private function prepareOrderDetailsForCSV($po, $deliveryName, $details) {
-        $asnData = [] ;
+        $asnData = [];
 
         foreach ($details as $detail) {
             $orderDetails = $detail['orderdetails'];
@@ -530,7 +531,8 @@ class Account extends \yii\db\ActiveRecord {
                 'Oracle invoice number'    => ''
             ];
         }
-        return $asnData ;
+
+        return $asnData;
     }
 
 
@@ -549,19 +551,19 @@ class Account extends \yii\db\ActiveRecord {
      */
     private function createAsnFileName($po) {
         if (!array_key_exists('account.dropshipDirectory', Yii::$app->params)) {
-            die('You need to configure the setting for account.dropshipDirectory') ;
+            die('You need to configure the setting for account.dropshipDirectory');
         }
 
         $csvFileDirectory = Yii::$app->params['account.dropshipDirectory'];
-        $csvFileDirectory = Yii::getAlias($csvFileDirectory) ;
+        $csvFileDirectory = Yii::getAlias($csvFileDirectory);
         if (substr($csvFileDirectory, -1, 1) <> '/') {
-            $csvFileDirectory .= '/' ;
+            $csvFileDirectory .= '/';
         }
         if (!is_dir($csvFileDirectory)) {
-            mkdir($csvFileDirectory, 0600, true) ;
+            mkdir($csvFileDirectory, 0600, true);
         }
 
-        return "{$csvFileDirectory}ASN-{$this->customer_exertis_account_number}-$po.csv" ;
+        return "{$csvFileDirectory}ASN-{$this->customer_exertis_account_number}-$po.csv";
     }
 
 
@@ -758,4 +760,42 @@ class Account extends \yii\db\ActiveRecord {
 
         return $activity;
     }
+
+    /**
+     * GET STORE
+     * ========
+     * RCH 20160202 : check cached value in session as this gets hit too many times
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getStore() {
+        $isConsole = Yii::$app instanceof \yii\console\Application;
+
+        // -------------------------------------------------------------
+        // Console has no session, so can't be cached
+        // -------------------------------------------------------------
+        if (!$isConsole) {
+            $session = Yii::$app->session;
+            $session->open();
+            if (!empty($session['ZtormAccessStore'])) {
+                return $session['ZtormAccessStore'];
+            }
+        }
+
+        $type   = \Yii::$app->params['storeType'];
+        $result = $this->hasOne(ZtormAccess::className(), [
+            'storealias' => 'storealias'
+        ])->andWhere(ZtormAccess::tableName() . '.type = :type', [':type' => $type]);
+
+        // ---------------------------------------------------------------
+        // cache this value if possible
+        // ---------------------------------------------------------------
+        if (!$isConsole) {
+            $session['ZtormAccessStore'] = $result;
+        }
+
+        return $result;
+    }
+
+
 }

@@ -79,7 +79,7 @@ define([],
 
             if (!row.next().hasClass('resend')) {
                 var cols    = row.find('td').length;
-                var details = element.attr('rel').split('?')[1].split('&');
+                var details = decodeURIComponent(element.attr('rel')).split('?')[1].split('&');
                 var data    = '<div data-bind="template: { name: \'resendEmails\', data: $data}"></div>';
                 var vModel  = new self.vModel(); //{showForm: true};
                 var newrow = $('<tr class="resend" ><td colspan="' + cols + '">' + data + '</td></tr>');
@@ -96,6 +96,13 @@ define([],
                 for (var ind = 0; ind < details.length; ind++) {
                     var bits               = details[ind].split('=');
                     vModel.params[bits[0]] = bits[1];
+
+                    if (bits[0] == 'email') {
+                        vModel.email(bits[1]) ;
+                        
+                    } else if (bits[0] == 'name') {
+                        vModel.recipient(bits[1]) ;
+                    }
                 }
 
                 vModel.showForm(true);

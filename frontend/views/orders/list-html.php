@@ -22,7 +22,7 @@ $selectedStockClass = 'selected-stock';
 $browser = $_SERVER['HTTP_USER_AGENT'];;
 
 if(strpos($browser, 'Firefox') !== false){
-    
+
     Alert::begin([
         'options' => [
             'class' => 'alert-warning',
@@ -34,7 +34,7 @@ if(strpos($browser, 'Firefox') !== false){
     echo Html::a('Click here', 'https://get.adobe.com/uk/reader/'). ' to install, if you don\'t have it yet.</h3>';
 
     Alert::end();
-    
+
 }
 
 ?>
@@ -43,9 +43,9 @@ if(strpos($browser, 'Firefox') !== false){
         <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
 
         <?php Pjax::begin();
-        
+
         //die(print_r($dataProvider,true));
-        
+
         echo GridView::widget([
             'tableOptions'      => ['id' => 'orderlistTable'],
             'pjax'              => true,
@@ -94,35 +94,40 @@ if(strpos($browser, 'Firefox') !== false){
                    'label' => 'PO',
                    'value' => function($data){
                         $po = common\models\Orderdetails::find()->where(['stock_item_id'=>$data->id])->one()->po;
-                        
-                        return strpos($po, "EDR") ? substr($po, 0, strpos($po, "EDR")) : $po; 
+
+                        return strpos($po, "EDR") ? substr($po, 0, strpos($po, "EDR")) : $po;
                    }
                ],
                //'emailedUser.id', // RCH 20160504
                'timestamp_added',
-                       
+
                [
                    'label' => 'Actions',
                    'format' => 'raw',
                    'value' => function($data){
                        //yii\helpers\VarDumper::dump($data->eztorm_product_id, 99, true); die();
-                         
-                       $emailedItem = common\models\EmailedItem::find()->where(['stock_item_id'=>$data->id])->one();
-                       
+
+                       $emailedItem = common\models\EmailedItem::find()
+                                ->where(['stock_item_id'=>$data->id])
+                           ->with('emailedUser')
+                                ->one();
+
                        if($emailedItem){
                            $emailedItemId = $emailedItem->id;
                        } else {
                            $emailedItemId = 0;
                        }
-                   
+
                         $urlParams = [
                             'euser'     => $data->send_email,
+                            'name'      => $emailedItem->emailedUser->name,
+                            'email'     => $emailedItem->emailedUser->email,
                             'eitem'     => $emailedItemId,
                             'onumber'   => substr($data->eztorm_order_id, 1),
                             'stockroom' => $data->stockroom_id,
                             'itemId'    => $data->id
                         ];
-                   
+
                         $emailBtn = Html::button('<span class="glyphicon glyphicon-envelope"></span>',
                                                 [
                                                     'rel' => Yii::$app->urlManager->createUrl(array_merge(['yiicomp/stockroom/viewkeys'], $urlParams)),
@@ -135,13 +140,13 @@ if(strpos($browser, 'Firefox') !== false){
                                                     'data-original-title' => 'View the keys'
                                                 ]
                                                 );
-                        
+
                         $catalogue = common\models\ZtormCatalogueCache::find()->where(['RealProductId'=>$data->eztorm_product_id])->exists();
                         $hidden = '';
                         if(!$catalogue){
                             $hidden = 'hidden';
                         }
-                        
+
                         $printButton = Html::a('<span class="glyphicon glyphicon-print" style="color:#3A3A3A"></span>',
                                                 [Yii::$app->urlManager->createUrl(array_merge(['printkeys/reprint'], ['pdfkeys' => $data->id]))],
                                                 [
@@ -153,8 +158,8 @@ if(strpos($browser, 'Firefox') !== false){
                                                     'data-original-title' => 'Re-print the key'
                                                 ]
                                                 );
-                        
-                   
+
+
                         return '<div class="btn-group-horizontal btn-group-SM" role="group" aria-label="krajee-book-detail-buttons">' . $emailBtn . ' ' . $printButton . '</div>';
                    }
                ]
@@ -254,6 +259,7 @@ if(strpos($browser, 'Firefox') !== false){
 
 <script type="application/javascript">
     function resendEmails(event) {
+
         var tkn     = $('meta[name="csrf-token"]').attr("content");
         var element = $(event.target);
         if (element[0].tagName != 'BUTTON') {

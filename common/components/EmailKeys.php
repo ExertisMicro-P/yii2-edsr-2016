@@ -476,11 +476,6 @@ class EmailKeys {
 
             list($individualEmails, $includePdfs) = $this->checkEmailOptions($templateName);
 
-            // ---------------------------------------------------------------
-            // RCH orderNumber is actually just an arbitrary ref entered by the user
-            // ---------------------------------------------------------------
-            $subject = 'Exertis Digital Stock Room: ' . Yii::t("user", "Order Details for " . $recipientDetails['orderNumber']);
-
             //Check if account has a logo
             if (!$account->logo) {
 
@@ -498,10 +493,10 @@ class EmailKeys {
 
 
             if ($individualEmails) {
-                $result = $this->sendEmailPerItem($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $selectedDetails, $account);
+                $result = $this->sendEmailPerItem($mailer, $includePdfs, $templateName, $recipientDetails, $selectedDetails, $account);
 
             } else {
-                $result = $this->sendEmail($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $selectedDetails, $account);
+                $result = $this->sendEmail($mailer, $includePdfs, $templateName, $recipientDetails, $selectedDetails, $account);
             }
 
         }
@@ -599,7 +594,6 @@ class EmailKeys {
      *
      * @param $mailer
      * @param $includePdfs
-     * @param $subject
      * @param $templateName
      * @param $recipientDetails
      * @param $selectedDetails
@@ -607,7 +601,7 @@ class EmailKeys {
      *
      * @return bool
      */
-    private function sendEmailPerItem($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $selectedDetails, $account) {
+    private function sendEmailPerItem($mailer, $includePdfs, $templateName, $recipientDetails, $selectedDetails, $account) {
         $result = true;
 
         foreach ($selectedDetails['codes'] as $productCode => $details) {
@@ -629,7 +623,7 @@ class EmailKeys {
             foreach ($details['keyItems'] as $keyId => $productKey) {
                 $emailData['codes'][$productCode]['keyItems'][$keyId] = $productKey;
 
-                if (!$this->sendEmail($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $emailData, $account)) {
+                if (!$this->sendEmail($mailer, $includePdfs, $templateName, $recipientDetails, $emailData, $account)) {
                     $result = false;
                 }
             }
@@ -656,7 +650,6 @@ class EmailKeys {
      * attached to the email
      *
      * @param $mailer
-     * @param $subject
      * @param $templateName
      * @param $recipientDetails
      * @param $emailData
@@ -664,7 +657,34 @@ class EmailKeys {
      *
      * @return mixed
      */
-    private function sendEmail($mailer, $includePdfs, $subject, $templateName, $recipientDetails, $emailData, $account) {
+    private function sendEmail($mailer, $includePdfs, $templateName, $recipientDetails, $emailData, $account) {
+
+        // ---------------------------------------------------------------
+        // RCH orderNumber is actually just an arbitrary ref entered by the user
+        // ---------------------------------------------------------------
+        $orderNumber = $recipientDetails['orderNumber'] ;
+        $subject= '' ;
+        $bccAddress = null ;
+
+        if ($account){
+            if ($account->drop_ship_subject) {
+                $subject = $account->drop_ship_subject ;
+            }
+            if ($account->drop_ship_bcc) {
+                $bccAddress = $account->drop_ship_bcc;
+            }
+        }
+
+        // ---------------------------------------------------------------
+        // RCH orderNumber is actually just an arbitrary ref entered by the user
+        // ---------------------------------------------------------------
+        if (!$subject) {
+            $subject = 'Exertis Digital Stock Room: ' . Yii::t("user", "Order Details for {{ORDER_NUMBER}}");
+        }
+
+        $subject = str_replace("{{ORDER_NUMBER}}", $orderNumber, $subject) ;
+
+
 
         $message = $mailer->compose($templateName . '.php',
                                     compact("subject", "recipientDetails", "emailData", "account"))
@@ -676,6 +696,9 @@ class EmailKeys {
             $message->attach($filename);
         }
 
+        if ($bccAddress) {
+            $message->setBcc($bccAddress) ;
+        }
 
         // check for messageConfig before sending (for backwards-compatible purposes)
         if (empty($mailer->messageConfig["from"])) {

@@ -31,7 +31,7 @@ use yii\bootstrap\ActiveForm;
             <?php else: ?>
 
 
-            <figure><img src="http://www.exertis.com/wp-content/themes/exertis/assets/img/icon-form.png"></figure>
+            <figure><img src="/img/icon-form.png"></figure>
                 <div class="clearfix">
                     <h3>Send another registration email</h3>
                 </div>

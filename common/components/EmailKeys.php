@@ -572,8 +572,8 @@ class EmailKeys {
         if ($options) {
             $options = substr($options, 1);
 
-            if (strpos($options, ':')) {
-                $options = explode(':', $options);
+            if (strpos($options, '-')) {
+                $options = explode('-', $options);
             } else {
                 $options = [$options];
             }

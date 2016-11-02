@@ -70,6 +70,7 @@ if (!YII_ENV_TEST) {
     $config['bootstrap'][] = 'gii';
     //$config['modules']['gii'] = 'yii\gii\Module';
     $config['modules']['gii']['class'] = 'yii\gii\Module'; //http://www.yiiframework.com/extension/yii2-kartikgii/
+    $config['modules']['gii']['allowedIPs'] = ['192.168.56.1', '127.0.0.1'] ;
 }
 
 return $config;

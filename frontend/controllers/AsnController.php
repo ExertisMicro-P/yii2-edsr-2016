@@ -8,6 +8,8 @@ use common\models\StockItem;
 
 use yii\rest\ActiveController;
 use common\models\Account;
+use common\models\CustomerProductMapping;
+use common\models\DigitalProduct;
 use yii\web\Response;
 use Yii;
 use common\models\gauth\GAUser;
@@ -131,26 +133,33 @@ class AsnController extends ActiveController {
      * @param null $po
      * @param null $emailAddress
      * @param null $brand
+     * @param null $customerPartcode        The following three must either
+     * @param null $quantity                all be present or all be
+     * @param null $price                   absent - though price can be zero
      *
      * @return array
      */
-    public function actionSaveDropShipEmail($accountNo = null, $po = null, $email = null, $brand = null) {
+    public function actionSaveDropShipEmail($accountNo = null, $po = null, $email = null, $brand = null,
+                                            $customerPartcode, $quantity, $price) {
 
         $responseCode = 400;
 
         $purchaseOrder = trim($po);
         $brand         = trim($brand);
 
-        if (($result = $this->verifySDEParametersProvided($accountNo, $po, $email)) === true) {
+        if (($result = $this->verifySDEParametersProvided($accountNo, $po, $email)) === true &&
+            ($result = $this->verifyPartcodeOptions($customerPartcode, $quantity, $price) === true)
+        ) {
 
             $result = $this->verifyAccount($accountNo);
 
             if (is_object($result)) {
+
                 $account = $result;
-
-                $result = $this->verifyPO($account, $po);
-
+                $result  = $this->verifyPO($account, $po);
                 if ($result === true) {
+                    $partCode = $this->translatePartCode($account, $customerPartcode);
+
                     if (($result = $this->recordDropShipEmail($account, $accountNo, $po, $email, $brand)) === true) {
                         $responseCode = 200;
                         $result       = 'success';
@@ -317,6 +326,69 @@ class AsnController extends ActiveController {
         return $result;
     }
 
+    /**
+     * VERIFY PARTCODE OPTIONS
+     * =======================
+     * This check that either all items, partcode, quantity and price, are
+     * provided, or that all are absent.
+     *
+     * The price can be 0 (or 0.00), so can't check with empty, and also
+     * want eo ensure the quantity is a positive value
+     *
+     * @param $customerPartcode
+     * @param $quantity
+     * @param $price
+     *
+     * @return bool|string
+     */
+    private function verifyPartcodeOptions($customerPartcode, $quantity, $price) {
+
+        if (!empty($customerPartcode) &&
+            !empty($quantity) && $quantity > 0 &&
+            isset($quantity) && is_numeric($price) && doubleval($price) > 0
+        ) {
+            return true;
+        }
+
+        if (empty($customerPartcode) &&
+            empty($quantity) &&
+            !isset($price)
+        ) {
+            return true;
+        }
+
+        return 'Invalid partcode, quantity and price combination';
+    }
+
+    /**
+     * TRANSLATE PART CODE
+     * ===================
+     * Attempts to translate the passed customer product code to the equivalent
+     * oracle one, then locates and returns the matching DigitalProduct record.
+     *
+     * If no match is found, it assumes the code is actually the oracle one and
+     *
+     *
+     * @param $account
+     * @param $customerPartcode
+     *
+     * @return mixed
+     */
+    private function translatePartCode($account, $customerPartcode) {
+        $translation = CustomerProductMapping::find()
+                                             ->where('customer_account_number', $account->customer_exertis_account_number)
+                                             ->andWhere('customer_partcode', $customerPartcode)
+                                             ->one();
+        if (!empty($translation)) {
+            $customerPartcode = $translation->oracle_partcode;
+        }
+
+        $digitalProduct = DigitalProduct::find()
+                                        ->where('partcode', $customerPartcode)
+                                        ->andWher('is_digital', 1)
+                                        ->one();
+        return $digitalProduct ;
+    }
 
     /**
      * VERIFY ACCOUNT
@@ -392,7 +464,7 @@ class AsnController extends ActiveController {
         // Now gather the stock item details and send the emails. The emailkeys
         // module handles grouping and sorting into one or more emails
         // -------------------------------------------------------------------
-        $codes = [] ;
+        $codes = [];
         if (count($items)) {
             $recipientDetails = [
                 'email'       => $dse->email,
@@ -401,7 +473,7 @@ class AsnController extends ActiveController {
                 'message'     => ''
             ];
 
-            $account = $items[0]->stockitem->stockroom->account ;
+            $account = $items[0]->stockitem->stockroom->account;
 
             $emailer = new EmailKeys();
             foreach ($items as $order) {

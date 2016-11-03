@@ -3,6 +3,7 @@
 namespace frontend\controllers;
 
 use common\models\DropshipEmailDetails;
+use common\models\DropshipOrderline;
 use common\models\Orderdetails;
 use common\models\StockItem;
 
@@ -47,6 +48,7 @@ class AsnController extends ActiveController {
         $userIp     = Yii::$app->request->userIp;
         $firstThree = substr($userIp, 0, 3);
 
+        if ($firstThree != '172' && $firstThree != '127' && $firstThree != '192') {
             return false;
         }
 
@@ -133,44 +135,142 @@ class AsnController extends ActiveController {
      * @param null $po
      * @param null $emailAddress
      * @param null $brand
-     * @param null $customerPartcode        The following three must either
-     * @param null $quantity                all be present or all be
-     * @param null $price                   absent - though price can be zero
+     * @param null $partcode The following three must either
+     * @param null $quantity all be present or all be
+     * @param null $price    absent - though price can be zero
      *
-     * @return array
+     * @return bool
      */
     public function actionSaveDropShipEmail($accountNo = null, $po = null, $email = null, $brand = null,
-                                            $customerPartcode, $quantity, $price) {
-
-        $responseCode = 400;
+                                            $partcode = null, $quantity = null, $price = null) {
 
         $purchaseOrder = trim($po);
         $brand         = trim($brand);
 
-        if (($result = $this->verifySDEParametersProvided($accountNo, $po, $email)) === true &&
-            ($result = $this->verifyPartcodeOptions($customerPartcode, $quantity, $price) === true)
-        ) {
+        $result = $this->verifyDSEInputs($accountNo, $purchaseOrder, $email, $partcode, $quantity, $price);
 
-            $result = $this->verifyAccount($accountNo);
+        if (is_object($result)) {
+            $account = $result;
 
-            if (is_object($result)) {
+            // ---------------------------------------------------------------
+            // Check that the partcode, if provided, is recognised. This returns
+            // an error message if not, and the digital product if it is
+            // ---------------------------------------------------------------
+            $digitalProduct = $this->findOracleProductCode($account, $partcode);
+            if (is_string($digitalProduct)) {
+                $result = $digitalProduct;                 // Sets the error message
 
-                $account = $result;
-                $result  = $this->verifyPO($account, $po);
+            } else {
+
+//                die('all ok');
+
+                // -----------------------------------------------------------
+                // This returns either an error message or a dropship email object
+                // -----------------------------------------------------------
+                $connection    = DigitalProduct::getDb();
+                $transaction   = $connection->beginTransaction();
+
+                $result = $this->recordDropShipEmail($account, $accountNo, $purchaseOrder, $email, $brand);
+                if (is_object($result)) {
+                    $dse = $result ;
+                    $result = $this->saveTheOrderDetails($dse, $digitalProduct, $partcode, $quantity, $price);
+                }
+
                 if ($result === true) {
-                    $partCode = $this->translatePartCode($account, $customerPartcode);
-
-                    if (($result = $this->recordDropShipEmail($account, $accountNo, $po, $email, $brand)) === true) {
-                        $responseCode = 200;
-                        $result       = 'success';
-                    }
+                    $transaction->commit() ;
+                } else {
+                    $transaction->rollback ;
                 }
             }
         }
+
+        $this->sendResultToCaller($result);
+
+        // -------------------------------------------------------------------
+        // If all worked well we now send any previously recorded emails, and
+        // then save and process any provided order lines
+        // -------------------------------------------------------------------
+        if ($result === true) {
+            $this->sendEmailForPreOrderedItems($account, $dse);
+            $this->processTheOrderDetails($dse, $digitalProduct, $partcode, $quantity, $price);
+        }
+
+
+        return false;
+    }
+
+    /**
+     * SEND RESULT TO CALLER
+     * =====================
+     * Force sends the response to the caller, which leaves this process in a
+     * state where it can continue processing.
+     *
+     * If PHP is running under fast-cgi (fpm-cgi), we need to close that request
+     *
+     * @param $responseCode
+     * @param $result
+     */
+    private function sendResultToCaller($result) {
+        if ($result === true) {
+            $responseCode = 200;
+            $result       = 'success';
+
+        } else {
+            $responseCode = 400;
+        }
+
         Yii::$app->response->format     = 'json';
         Yii::$app->response->statusCode = $responseCode;
+        Yii::$app->response->data       = $result;
 
-        return ['status' => $responseCode, 'message' => $result];
+        Yii::$app->response->headers->add('Connection', 'close');
+        Yii::$app->response->send();
+
+        if (php_sapi_name() == 'fpm-fcgi') {
+            fastcgi_finish_request();
+        }
+    }
+
+    /**
+     * PROCESS THE ORDER DETAILS
+     * =========================
+     *
+     * @param $dse                      drop ship email record
+     * @param $digitalProduct           digital product record
+     * @param $partcode                 customer partcode
+     * @param $quantity
+     * @param $price
+     */
+    private function processTheOrderDetails($dse, $digitalProduct, $partcode, $quantity, $price) {
+echo 'do the work' ;
+    }
+
+    /**
+     * SAVE THE ORDER DETAILS
+     * ======================
+     *
+     * @param $dse
+     * @param $digitalProduct
+     * @param $partcode
+     * @param $quantity
+     * @param $price
+     *
+     * @return bool|string
+     */
+    private function saveTheOrderDetails($dse, $digitalProduct, $partcode, $quantity, $price) {
+        $result = true ;
+        if (is_object($digitalProduct)) {
+            $dsOrder                    = new DropshipOrderline;
+            $dsOrder->dropship_id       = $dse->id;
+            $dsOrder->customer_partcode = $partcode;
+            $dsOrder->oracle_partcode   = $digitalProduct->partcode;
+            $dsOrder->quantity          = $quantity;
+            $dsOrder->price             = $price;
+            if ((!$result = $dsOrder->save())) {
+                $result = 'Unable to save the order details';
+            }
+        }
+        return $result ;
     }
 
     /**
@@ -183,14 +283,12 @@ class AsnController extends ActiveController {
      * @param $emailAddress
      * @param $brand
      *
-     * @return bool|string
+     * @return bool|DropshipEmailDetails|string
      */
     private function recordDropShipEmail($account, $accountNo, $purchaseOrder, $emailAddress, $brand) {
 
         if (($result = $this->checkIfDuplicate($account, $accountNo, $purchaseOrder, $emailAddress, $brand)) === false) {
-
             $this->deleteOldEmails($account, $accountNo, $purchaseOrder, $brand);
-
             $result = $this->addNewDropShipEmail($account, $accountNo, $purchaseOrder, $emailAddress, $brand);
         }
 
@@ -202,13 +300,7 @@ class AsnController extends ActiveController {
      * ======================
      * Saves the new details
      *
-     * @param $account
-     * @param $accountNo
-     * @param $purchaseOrder
-     * @param $emailAddress
-     * @param $brand
-     *
-     * @return bool|string
+     * @return DropshipEmailDetails|string
      */
     private function addNewDropShipEmail($account, $accountNo, $purchaseOrder, $emailAddress, $brand) {
         $dse             = new DropshipEmailDetails();
@@ -223,9 +315,7 @@ class AsnController extends ActiveController {
 
         try {
             if ($dse->save()) {
-                $result = true;
-
-                $this->sendEmailForPreOrderedItems($account, $dse);
+                $result = $dse;
 
             } elseif (array_key_exists('email', $dse->errors)) {
                 $result = 'Malformed parameter values';
@@ -298,7 +388,36 @@ class AsnController extends ActiveController {
 
 
     /**
-     * VERIFY SDE PARAMETERS PROVIDED
+     * VERIFY DSE INPUTS
+     * =================
+     * Calls support methods to validate that the supplied data formats are correct,
+     * then that the account is known a nda ht
+     *
+     * @param $accountNo
+     * @param $purchaseOrder
+     * @param $emailAddress
+     * @param $customerPartcode
+     * @param $quantity
+     * @param $price
+     *
+     * @return array|bool|string
+     */
+    private function verifyDSEInputs($accountNo, $purchaseOrder, $emailAddress, $customerPartcode, $quantity, $price) {
+        if (($result = $this->verifyDSEParametersProvided($accountNo, $purchaseOrder, $emailAddress)) === true) {
+            if (($result = $this->verifyDropshipOrderDetails($customerPartcode, $quantity, $price)) === true) {
+                if (($result = $this->verifyPO($purchaseOrder)) === true) {
+
+                    $result = $this->verifyAccount($accountNo);
+                }
+            }
+        }
+
+        return $result;
+    }
+
+
+    /**
+     * VERIFY DSE PARAMETERS PROVIDED
      * ==============================
      * Checks that each mandatory parameter was provided
      *
@@ -310,7 +429,7 @@ class AsnController extends ActiveController {
      *
      * @return bool|string
      */
-    private function verifySDEParametersProvided($accountNo, $purchaseOrder, $emailAddress) {
+    private function verifyDSEParametersProvided($accountNo, $purchaseOrder, $emailAddress) {
         $result = true;
 
         if (!$accountNo) {
@@ -327,67 +446,102 @@ class AsnController extends ActiveController {
     }
 
     /**
-     * VERIFY PARTCODE OPTIONS
-     * =======================
+     * VERIFY DROPSHIP ORDER DETAILS
+     * =============================
      * This check that either all items, partcode, quantity and price, are
      * provided, or that all are absent.
      *
-     * The price can be 0 (or 0.00), so can't check with empty, and also
-     * want eo ensure the quantity is a positive value
+     * The price can be 0 (or 0.00), so can't check with empty(), and also
+     * need to ensure the quantity is a positive, integral, value
      *
      * @param $customerPartcode
      * @param $quantity
      * @param $price
      *
-     * @return bool|string
+     * @return array|string
      */
-    private function verifyPartcodeOptions($customerPartcode, $quantity, $price) {
+    private function verifyDropshipOrderDetails($customerPartcode, $quantity, $price) {
 
         if (!empty($customerPartcode) &&
-            !empty($quantity) && $quantity > 0 &&
-            isset($quantity) && is_numeric($price) && doubleval($price) > 0
+            !empty($quantity) && is_numeric($quantity) > 0 &&
+            is_int($quantity + 0) &&                                // + 0 to force the conversion needed by is_int
+            isset($quantity) && is_numeric($price) && doubleval($price) >= 0
         ) {
-            return true;
+
+            return true ;
         }
 
+        // -------------------------------------------------------------------
+        // Not all set, so check that none are set
+        // -------------------------------------------------------------------
         if (empty($customerPartcode) &&
             empty($quantity) &&
-            !isset($price)
+            empty($price)
         ) {
-            return true;
+            return true ;
         }
 
-        return 'Invalid partcode, quantity and price combination';
+        return ['Invalid partcode, quantity and price combination', false];
     }
 
     /**
-     * TRANSLATE PART CODE
-     * ===================
+     * FIND ORACLE PRODUCT CODE
+     * ========================
      * Attempts to translate the passed customer product code to the equivalent
      * oracle one, then locates and returns the matching DigitalProduct record.
      *
      * If no match is found, it assumes the code is actually the oracle one and
+     * double checks by reading that.
      *
+     * If all is OK, it returns the digital product, otherwise an error message
      *
      * @param $account
      * @param $customerPartcode
      *
      * @return mixed
      */
-    private function translatePartCode($account, $customerPartcode) {
-        $translation = CustomerProductMapping::find()
-                                             ->where('customer_account_number', $account->customer_exertis_account_number)
-                                             ->andWhere('customer_partcode', $customerPartcode)
-                                             ->one();
-        if (!empty($translation)) {
-            $customerPartcode = $translation->oracle_partcode;
+    private function findOracleProductCode($account, $customerPartcode) {
+        $digitalProduct = false;
+
+        if (!empty($partcode)) {
+            $translation = CustomerProductMapping::find()
+                                                 ->where('customer_account_number', $account->customer_exertis_account_number)
+                                                 ->andWhere('customer_partcode', $customerPartcode)
+                                                 ->one();
+            if (!empty($translation)) {
+                $customerPartcode = $translation->oracle_partcode;
+            }
+
+            $digitalProduct = DigitalProduct::find()
+                                            ->where('partcode', $customerPartcode)
+                                            ->andWher('is_digital', 1)
+                                            ->one();
+
+            if (empty($digitalProduct)) {
+                $digitalProduct = 'Unrecognised partcode';
+            }
         }
 
-        $digitalProduct = DigitalProduct::find()
-                                        ->where('partcode', $customerPartcode)
-                                        ->andWher('is_digital', 1)
-                                        ->one();
-        return $digitalProduct ;
+        return $digitalProduct;
+    }
+
+    /**
+     * CHECK AND SAVE ORDER DETAILS
+     * ============================
+     * Attempts to translate the passed customer product code to the equivalent
+     * oracle one, then locates and returns the matching DigitalProduct record.
+     *
+     * If no match is found, it assumes the code is actually the oracle one and
+     * double checks by reading that.
+     *
+     * @param $account
+     * @param $customerPartcode
+     * @param $quantity
+     * @param $price
+     *
+     * @return mixed
+     */
+    private function checkAndSaveOrderDetails($account, $customerPartcode, $quantity, $price) {
     }
 
     /**
@@ -414,13 +568,12 @@ class AsnController extends ActiveController {
      * =========
      * Simply checks that the purchase order was non-blank
      *
-     * @param $account
      * @param $purchaseOrder
      *
      * @return bool|string
      */
-    private function verifyPO($account, $purchaseOrder) {
-        if (strlen(trim($purchaseOrder)) > 0) {
+    private function verifyPO($purchaseOrder) {
+        if (strlen($purchaseOrder) > 0) {
             return true;
         }
 

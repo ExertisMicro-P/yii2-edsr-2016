@@ -17,7 +17,7 @@ use Yii;
  * @property integer $created_by
  * @property integer $updated_by
  */
-class DropshipEmailDetails extends \yii\db\ActiveRecord
+class DropshipEmailDetails extends \common\models\BaseModel
 {
     /**
      * @inheritdoc

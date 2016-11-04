@@ -16,7 +16,7 @@ use Yii;
  * @property integer $created_at
  * @property integer $updated_at
  */
-class DropshipOrderline extends \yii\db\ActiveRecord
+class DropshipOrderline extends \common\models\BaseModel
 {
     /**
      * @inheritdoc

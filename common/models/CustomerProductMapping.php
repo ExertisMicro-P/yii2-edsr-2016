@@ -14,7 +14,7 @@ use Yii;
  * @property integer $created_at
  * @property integer $updated_at
  */
-class CustomerProductMapping extends \yii\db\ActiveRecord
+class CustomerProductMapping extends \common\models\BaseModel
 {
     /**
      * @inheritdoc

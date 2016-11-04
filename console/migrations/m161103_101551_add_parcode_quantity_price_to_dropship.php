@@ -18,8 +18,12 @@ class m161103_101551_add_parcode_quantity_price_to_dropship extends Migration {
             'quantity'          => Schema::TYPE_STRING . ' NOT NULL COMMENT"The number ordered"',
             'price'             => Schema::TYPE_DOUBLE . ' NOT NULL COMMENT"The order price, which can be zero"',
 
-            'created_at'        => Schema::TYPE_INTEGER . ' NOT NULL',
-            'updated_at'        => Schema::TYPE_INTEGER . ' NOT NULL',
+            'created_at' => Schema::TYPE_DATETIME . ' NULL',
+            'created_by' => Schema::TYPE_INTEGER,
+            'updated_at' => Schema::TYPE_TIMESTAMP,
+            'updated_by' => Schema::TYPE_INTEGER,
+            'deleted_at' => Schema::TYPE_DATETIME,
+            'deleted_by' => Schema::TYPE_INTEGER
         ], $tableOptions);
 
         $this->addForeignKey('ds_email_fk',

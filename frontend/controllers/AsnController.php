@@ -15,9 +15,11 @@ use yii\web\Response;
 use Yii;
 use common\models\gauth\GAUser;
 use common\components\EmailKeys;
+use common\components\ItemPurchaserHelper;
 
 
 class AsnController extends ActiveController {
+    use itemPurchaserHelper;
 
     public $modelClass = '\common\models\StockItem';
 //    public $modelClass = 'api\modules\v1\models\StockItem';
@@ -162,24 +164,23 @@ class AsnController extends ActiveController {
 
             } else {
 
-//                die('all ok');
-
                 // -----------------------------------------------------------
                 // This returns either an error message or a dropship email object
                 // -----------------------------------------------------------
-                $connection    = DigitalProduct::getDb();
-                $transaction   = $connection->beginTransaction();
+                $connection  = DigitalProduct::getDb();
+                $transaction = $connection->beginTransaction();
 
                 $result = $this->recordDropShipEmail($account, $accountNo, $purchaseOrder, $email, $brand);
                 if (is_object($result)) {
-                    $dse = $result ;
+                    $dse    = $result;
                     $result = $this->saveTheOrderDetails($dse, $digitalProduct, $partcode, $quantity, $price);
                 }
 
                 if ($result === true) {
-                    $transaction->commit() ;
+                    $transaction->commit();
+
                 } else {
-                    $transaction->rollback ;
+                    $transaction->rollback();
                 }
             }
         }
@@ -188,11 +189,13 @@ class AsnController extends ActiveController {
 
         // -------------------------------------------------------------------
         // If all worked well we now send any previously recorded emails, and
-        // then save and process any provided order lines
+        // then save and process any provided order lines.
+        // ProcessOrderDetails may create stock items ready for sendEmail...
+        // to process
         // -------------------------------------------------------------------
         if ($result === true) {
+            $this->processTheOrderDetails($account, $dse, $digitalProduct, $partcode, $quantity, $price);
             $this->sendEmailForPreOrderedItems($account, $dse);
-            $this->processTheOrderDetails($dse, $digitalProduct, $partcode, $quantity, $price);
         }
 
 
@@ -235,14 +238,35 @@ class AsnController extends ActiveController {
      * PROCESS THE ORDER DETAILS
      * =========================
      *
+     * @param $account                  account record
      * @param $dse                      drop ship email record
      * @param $digitalProduct           digital product record
      * @param $partcode                 customer partcode
      * @param $quantity
      * @param $price
      */
-    private function processTheOrderDetails($dse, $digitalProduct, $partcode, $quantity, $price) {
-echo 'do the work' ;
+    private function processTheOrderDetails($account, $dse, $digitalProduct, $partcode, $quantity, $price) {
+        if ($digitalProduct) {
+            $this->iphAccount = $account;
+
+
+            $orderLines  = $dse->dropshipOrderlines;
+            $itemDetails = [];
+
+            foreach ($orderLines as $orderLine) {
+
+                $lineItem             = $digitalProduct->toArray();
+                $lineItem['cost']     = $orderLine->price;
+                $lineItem['quantity'] = $orderLine->quantity;
+                $lineItem['total']    = $orderLine->price * $orderLine->quantity;
+
+                $itemDetails[] = $lineItem;
+            }
+            $this->completeThePurchase($dse->po, $itemDetails);
+
+
+            echo 'do the work';
+        }
     }
 
     /**
@@ -258,7 +282,7 @@ echo 'do the work' ;
      * @return bool|string
      */
     private function saveTheOrderDetails($dse, $digitalProduct, $partcode, $quantity, $price) {
-        $result = true ;
+        $result = true;
         if (is_object($digitalProduct)) {
             $dsOrder                    = new DropshipOrderline;
             $dsOrder->dropship_id       = $dse->id;
@@ -270,7 +294,8 @@ echo 'do the work' ;
                 $result = 'Unable to save the order details';
             }
         }
-        return $result ;
+
+        return $result;
     }
 
     /**
@@ -468,7 +493,7 @@ echo 'do the work' ;
             isset($quantity) && is_numeric($price) && doubleval($price) >= 0
         ) {
 
-            return true ;
+            return true;
         }
 
         // -------------------------------------------------------------------
@@ -478,7 +503,7 @@ echo 'do the work' ;
             empty($quantity) &&
             empty($price)
         ) {
-            return true ;
+            return true;
         }
 
         return ['Invalid partcode, quantity and price combination', false];
@@ -503,18 +528,19 @@ echo 'do the work' ;
     private function findOracleProductCode($account, $customerPartcode) {
         $digitalProduct = false;
 
-        if (!empty($partcode)) {
+        if (!empty($customerPartcode)) {
+
             $translation = CustomerProductMapping::find()
-                                                 ->where('customer_account_number', $account->customer_exertis_account_number)
-                                                 ->andWhere('customer_partcode', $customerPartcode)
+                                                 ->where(['customer_account_number' => $account->customer_exertis_account_number])
+                                                 ->where(['customer_partcode' => $customerPartcode])
                                                  ->one();
             if (!empty($translation)) {
                 $customerPartcode = $translation->oracle_partcode;
             }
 
             $digitalProduct = DigitalProduct::find()
-                                            ->where('partcode', $customerPartcode)
-                                            ->andWher('is_digital', 1)
+                                            ->where(['partcode' => $customerPartcode])
+//                                            ->andWhere(['is_digital' => 1])
                                             ->one();
 
             if (empty($digitalProduct)) {

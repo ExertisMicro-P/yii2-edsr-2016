@@ -19,6 +19,7 @@ return [
 
     'account.copyAllEmailsTo'                        => ['edsr@crewe-it.co.uk'],
 
+    'EDItoMDFSBasketEmailAddress'      => 'webteam-xertis@crewe-it.co.uk',
 
     'fontLocation' => '/var/www/fonts/',
     'fontFile'      => 'arial.ttf',

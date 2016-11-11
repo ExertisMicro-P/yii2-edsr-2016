@@ -60,15 +60,4 @@ class DropshipOrderline extends \common\models\BaseModel
             'deleted_by' => 'Deleted By',
         ];
     }
-
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getDropshipOrderlines()
-    {
-        return $this->hasMany(DropshipOrderline::className(), ['dropship_id' => 'id']);
-    }
-
-
 }

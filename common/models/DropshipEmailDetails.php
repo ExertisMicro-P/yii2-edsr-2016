@@ -62,4 +62,15 @@ class DropshipEmailDetails extends \common\models\BaseModel
             'updated_by' => 'Updated By',
         ];
     }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getDropshipOrderlines()
+    {
+        return $this->hasMany(DropshipOrderline::className(), ['dropship_id' => 'id']);
+    }
+
+
+
 }
